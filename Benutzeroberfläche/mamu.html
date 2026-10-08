@@ -1,0 +1,2302 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<!-- Kein Zoomen: Die Körperansicht hat eine feste Größe -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>mamu – Fitness &amp; Ernährung</title>
+
+<style>
+/* =====================================================================
+   mamu – Benutzeroberfläche
+   Aufbau dieser Datei:
+   1. CSS (Aussehen)      2. HTML (Struktur)      3. JavaScript (Verhalten)
+   ===================================================================== */
+
+/* ---------- 1. Farben und Grundwerte (zentral an einer Stelle) ---------- */
+:root {
+  --salbei: #9bb8a5;          /* Hauptakzent: Salbeigrün */
+  --salbei-dunkel: #4f7a63;   /* kräftigere Variante für Knöpfe und Text */
+  --salbei-mittel: #d5e4da;
+  --salbei-hell: #eef4f0;
+  --text: #25302a;
+  --leise: #68766e;           /* zurückhaltender Text */
+  --linie: #e2e9e4;
+  --koerper: #eceeec;         /* Farbe der Körper-Silhouette */
+  --radius: 18px;
+  --nav-h: 68px;              /* Höhe der unteren Navigationsleiste */
+
+  /* Statusfarben der Muskelgruppen (dezent) */
+  --rot: #ec8f88;
+  --orange: #f4b872;
+  --gelb: #f0dc78;
+  --gruen: #8ccf99;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: #ffffff;
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.45;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Platz für die untere Navigationsleiste */
+body { padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px); }
+
+h1, h2, h3, p { margin: 0; }
+button, input, select { font: inherit; color: inherit; }
+
+/* ---------- 2. Seiten ---------- */
+.seite { display: none; max-width: 1100px; margin: 0 auto; padding: 0 16px 24px; }
+.seite.aktiv { display: block; }
+/* Auf großen Bildschirmen bleiben die Karten gut lesbar (nur die Körperseite nutzt die volle Breite) */
+#seite-training, #seite-statistik, #seite-ernaehrung, #seite-mehr { max-width: 720px; }
+
+.seitenkopf {
+  display: flex; align-items: baseline; gap: 12px;
+  padding: calc(env(safe-area-inset-top) + 18px) 0 14px;
+}
+.marke { font-weight: 800; letter-spacing: .5px; color: var(--salbei-dunkel); font-size: 20px; }
+.seitenkopf h1 { font-size: 22px; font-weight: 700; }
+.untertitel { color: var(--leise); font-size: 14px; margin-bottom: 14px; }
+
+/* ---------- 3. Bausteine: Karten, Knöpfe, Eingabefelder ---------- */
+.karte {
+  background: #fff; border: 1px solid var(--linie); border-radius: var(--radius);
+  padding: 16px; box-shadow: 0 1px 3px rgba(40, 60, 50, .05);
+}
+.karte + .karte { margin-top: 14px; }
+.karte h2 { font-size: 17px; margin-bottom: 10px; }
+.karte h3 { font-size: 15px; margin-bottom: 8px; }
+
+.knopf {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid var(--salbei); background: #fff; color: var(--salbei-dunkel);
+  border-radius: 14px; padding: 11px 18px; font-weight: 600; cursor: pointer;
+}
+.knopf:hover { background: var(--salbei-hell); }
+.knopf.primaer { background: var(--salbei-dunkel); border-color: var(--salbei-dunkel); color: #fff; }
+.knopf.primaer:hover { background: #416a54; }
+.knopf.breit { width: 100%; }
+.knopf.klein { padding: 7px 12px; font-size: 13px; border-radius: 11px; }
+.knopf.gefahr { border-color: #e3a29d; color: #b34a42; }
+.knopf:disabled { opacity: .45; cursor: not-allowed; }
+.knopf:focus-visible, .nav button:focus-visible { outline: 3px solid var(--salbei-mittel); outline-offset: 2px; }
+
+.feld { display: block; margin-bottom: 12px; }
+.feld > span { display: block; font-size: 13px; color: var(--leise); margin-bottom: 4px; }
+.feld input, .feld select {
+  width: 100%; padding: 11px 13px; border: 1px solid var(--linie); border-radius: 13px;
+  background: #fff; min-height: 44px;
+}
+.feld input:focus, .feld select:focus { outline: 2px solid var(--salbei); border-color: var(--salbei); }
+.feld-reihe { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+
+.segment { display: inline-flex; background: var(--salbei-hell); border-radius: 14px; padding: 3px; }
+.segment button {
+  border: 0; background: none; padding: 8px 18px; border-radius: 11px; cursor: pointer;
+  color: var(--leise); font-weight: 600;
+}
+.segment button.aktiv { background: #fff; color: var(--salbei-dunkel); box-shadow: 0 1px 3px rgba(40, 60, 50, .15); }
+
+.hinweis { background: var(--salbei-hell); border-radius: 14px; padding: 12px 14px; font-size: 14px; color: var(--text); }
+.hinweis.warnung { background: #fdf4e3; }
+.hinweis.fehler { background: #fcebe9; color: #8e362f; }
+.klein-text { font-size: 13px; color: var(--leise); }
+.platzhalter { color: var(--leise); text-align: center; padding: 18px 8px; }
+
+.raster { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.kennzahl { background: var(--salbei-hell); border-radius: 16px; padding: 14px; }
+.kennzahl b { display: block; font-size: 26px; line-height: 1.1; color: var(--salbei-dunkel); }
+.kennzahl span { font-size: 13px; color: var(--leise); }
+
+/* ---------- 4. Statusfarben ---------- */
+.s-inactive { --farbe: #ffffff; }
+.s-starter  { --farbe: var(--rot); }
+.s-rising   { --farbe: var(--orange); }
+.s-advanced { --farbe: var(--gelb); }
+.s-elite    { --farbe: var(--gruen); }
+
+.status-pille {
+  display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px;
+  border-radius: 20px; background: var(--salbei-hell); font-size: 14px; font-weight: 600;
+}
+.status-pille i, .legende i {
+  width: 12px; height: 12px; border-radius: 50%; background: var(--farbe);
+  border: 1px solid rgba(0, 0, 0, .18); display: inline-block;
+}
+
+/* ---------- 5. Körperansicht ---------- */
+.koerper-layout { display: block; }
+.schalter-zeile { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 8px; }
+
+.wischbereich { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.figuren { display: flex; justify-content: center; gap: 28px; }
+.figur { display: none; text-align: center; }
+.figur.aktiv { display: block; }
+.figur-titel { font-size: 13px; color: var(--leise); margin-bottom: 2px; }
+.figur svg { display: block; margin: 0 auto; width: 220px; height: 462px; touch-action: pan-y; }
+
+.punkte { display: flex; justify-content: center; gap: 8px; margin: 6px 0 2px; }
+.punkte i { width: 8px; height: 8px; border-radius: 50%; background: var(--salbei-mittel); }
+.punkte i.aktiv { background: var(--salbei-dunkel); }
+.wisch-hinweis { text-align: center; font-size: 12px; color: var(--leise); }
+
+.koerper-form ellipse, .koerper-form path, .koerper-form rect { fill: var(--koerper); }
+.koerper-form line { stroke: var(--koerper); }
+
+/* Muskelgruppen: nur die Statusfarbe ist sichtbar */
+.muskel { cursor: pointer; outline: none; }
+.muskel .form { fill: var(--farbe); stroke: rgba(255, 255, 255, .9); stroke-width: 1.4; stroke-linejoin: round; }
+.muskel.s-inactive .form { stroke: #c3ccc6; }
+.muskel:hover .form { stroke: var(--salbei-dunkel); stroke-width: 2; }
+.muskel:focus-visible .form { stroke: var(--salbei-dunkel); stroke-width: 2.5; }
+/* Angeklickte Muskelgruppe: deutlicher Farbrand */
+.muskel.ausgewaehlt .form { stroke: #2e5a45; stroke-width: 3; }
+
+.score-label rect { fill: #fff; stroke: #2e5a45; stroke-width: 1.4; }
+.score-label text { font-size: 10.5px; font-weight: 700; fill: #2e5a45; }
+
+.legende {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px;
+  margin: 14px auto 0; max-width: 560px; font-size: 13px; color: var(--leise);
+}
+.legende span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ---------- 6. Muskelprofil ---------- */
+/* Smartphone: eigene Vollbildansicht (über dem Inhalt, unter der Navigation) */
+.profil-bereich { display: none; }
+.profil-bereich.offen {
+  display: block; position: fixed; left: 0; right: 0; top: 0;
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  background: #fff; overflow-y: auto; z-index: 30; padding: 0 16px 28px;
+}
+.profil-kopf {
+  display: flex; align-items: center; gap: 10px;
+  padding: calc(env(safe-area-inset-top) + 14px) 0 12px;
+  position: sticky; top: 0; background: #fff; z-index: 2;
+}
+.profil-kopf h2 { font-size: 24px; }
+.zurueck {
+  width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--linie);
+  background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.zurueck:hover { background: var(--salbei-hell); }
+
+.score-kopf { display: flex; align-items: center; gap: 18px; margin: 4px 0 16px; }
+.ring { width: 110px; height: 110px; flex: none; }
+.ring text { text-anchor: middle; fill: var(--text); }
+
+.zeile { padding: 10px 0; border-top: 1px solid var(--linie); }
+.zeile:first-child { border-top: 0; }
+.zeile-kopf { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+.zeile-kopf b { font-weight: 600; }
+.balken { height: 8px; background: var(--salbei-hell); border-radius: 6px; margin-top: 7px; overflow: hidden; }
+.balken i { display: block; height: 100%; background: var(--salbei); border-radius: 6px; }
+
+.diagramm svg { width: 100%; max-width: 520px; height: auto; display: block; margin: 0 auto; }
+.diagramm .achse { stroke: var(--linie); stroke-width: 1; }
+.diagramm .linie { fill: none; stroke: var(--salbei-dunkel); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.diagramm .punkt { fill: #fff; stroke: var(--salbei-dunkel); stroke-width: 2; }
+.diagramm .punkt.letzter { fill: var(--salbei-dunkel); }
+.diagramm text { font-size: 11px; fill: var(--leise); }
+.diagramm .wert { fill: var(--text); font-weight: 600; }
+
+.uebungs-karten { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.uebung-karte { border: 1px solid var(--linie); border-radius: 16px; overflow: hidden; background: #fff; }
+.uebung-bild {
+  height: 92px; background: var(--salbei-hell); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px; color: var(--salbei-dunkel); font-size: 11px;
+}
+.uebung-inhalt { padding: 12px; }
+.uebung-inhalt b { display: block; margin-bottom: 4px; }
+.etikett {
+  display: inline-block; font-size: 12px; background: var(--salbei-hell); color: var(--salbei-dunkel);
+  border-radius: 10px; padding: 2px 9px; margin-bottom: 6px;
+}
+
+@media (min-width: 700px) {
+  .figur { display: block; }
+  .figur svg { width: 250px; height: 525px; }
+  .seiten-schalter, .punkte, .wisch-hinweis { display: none; }
+}
+
+/* Große Bildschirme: Muskelprofil als eigener Inhaltsbereich neben dem Körper */
+@media (min-width: 1000px) {
+  .koerper-layout { display: grid; grid-template-columns: minmax(0, 1fr) 430px; gap: 28px; align-items: start; }
+  .profil-bereich, .profil-bereich.offen {
+    display: block; position: static; z-index: auto; overflow: visible;
+    padding: 4px 20px 20px; border: 1px solid var(--linie); border-radius: var(--radius); background: #fff;
+  }
+  .profil-kopf { position: static; padding-top: 14px; }
+}
+
+/* ---------- 7. Training ---------- */
+.liste-eintrag { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; padding: 12px 0; border-top: 1px solid var(--linie); }
+.liste-eintrag:first-child { border-top: 0; }
+.liste-eintrag b { display: block; }
+.liste-eintrag .klein-text { margin-top: 2px; }
+
+.schritte { display: flex; gap: 6px; margin: 4px 0 16px; }
+.schritte i { flex: 1; height: 6px; border-radius: 4px; background: var(--salbei-hell); }
+.schritte i.fertig { background: var(--salbei); }
+.schritte i.aktiv { background: var(--salbei-dunkel); }
+
+.gruppen-raster { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+.gruppen-knopf {
+  display: flex; align-items: center; gap: 9px; padding: 13px 12px; border-radius: 14px;
+  border: 1px solid var(--linie); background: #fff; cursor: pointer; font-weight: 600; text-align: left;
+}
+.gruppen-knopf i { width: 14px; height: 14px; border-radius: 50%; background: var(--farbe); border: 1px solid rgba(0,0,0,.18); flex: none; }
+.gruppen-knopf.gewaehlt { border-color: var(--salbei-dunkel); background: var(--salbei-hell); box-shadow: 0 0 0 2px var(--salbei-mittel); }
+
+.wahl-eintrag {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  padding: 11px 13px; border: 1px solid var(--linie); border-radius: 14px; margin-bottom: 8px;
+}
+.wahl-eintrag.gewaehlt { border-color: var(--salbei-dunkel); background: var(--salbei-hell); }
+.wahl-eintrag .klein-text { margin-top: 1px; }
+.knopf-zeile { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.knopf-zeile .knopf { flex: 1; }
+.fehlerliste { margin: 10px 0 0; padding-left: 18px; }
+
+/* ---------- 8. Statistik ---------- */
+.score-zeile { display: grid; grid-template-columns: 110px 1fr 70px; gap: 10px; align-items: center; padding: 6px 0; font-size: 14px; }
+.score-balken { height: 12px; background: var(--salbei-hell); border-radius: 8px; overflow: hidden; }
+.score-balken i { display: block; height: 100%; background: var(--farbe); border-right: 1px solid rgba(0,0,0,.12); }
+.score-wert { text-align: right; font-variant-numeric: tabular-nums; }
+.plus { color: #3d7d52; } .minus { color: #b34a42; }
+
+/* ---------- 9. Ernährung ---------- */
+.ergebnis-raster { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; margin-top: 14px; }
+.ergebnis { background: var(--salbei-hell); border-radius: 18px; padding: 16px; text-align: center; }
+.ergebnis b { display: block; font-size: 30px; color: var(--salbei-dunkel); line-height: 1.1; }
+.ergebnis span { font-size: 13px; color: var(--leise); }
+
+/* ---------- 10. Mehr ---------- */
+.avatar {
+  width: 64px; height: 64px; border-radius: 50%; background: var(--salbei-mittel); color: var(--salbei-dunkel);
+  display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; flex: none;
+}
+.profil-zeile { display: flex; gap: 14px; align-items: center; }
+
+/* ---------- 11. Untere Navigationsleiste (immer sichtbar) ---------- */
+.nav {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(255, 255, 255, .97); border-top: 1px solid var(--linie);
+  display: flex; justify-content: center;
+}
+.nav-innen { display: flex; width: 100%; max-width: 640px; }
+.nav button {
+  flex: 1; border: 0; background: none; cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px; font-size: 11px; color: var(--leise);
+}
+.nav-icon { width: 50px; height: 28px; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+.nav button.aktiv { color: var(--salbei-dunkel); font-weight: 700; }
+.nav button.aktiv .nav-icon { background: var(--salbei-mittel); }
+.nav svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Kurze Rückmeldung (Toast) */
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 50;
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);
+  background: var(--salbei-dunkel); color: #fff; padding: 11px 18px; border-radius: 14px;
+  font-size: 14px; box-shadow: 0 6px 18px rgba(0,0,0,.18); opacity: 0; pointer-events: none; transition: opacity .25s;
+  max-width: 90vw; text-align: center;
+}
+.toast.sichtbar { opacity: 1; }
+</style>
+</head>
+<body>
+<noscript>Bitte JavaScript aktivieren, damit mamu funktioniert.</noscript>
+
+<!-- =====================================================================
+     SEITE 1: KÖRPER (Startseite)
+     ===================================================================== -->
+<main id="seite-koerper" class="seite aktiv">
+  <div class="seitenkopf"><span class="marke">mamu</span><h1>Körper</h1></div>
+
+  <div class="koerper-layout">
+    <section aria-label="Körperansicht">
+      <div class="schalter-zeile">
+        <!-- Umschalter Mann / Frau -->
+        <div class="segment" id="schalter-geschlecht" role="group" aria-label="Körperansicht wählen">
+          <button type="button" data-aktion="geschlecht" data-wert="mann" class="aktiv">Mann</button>
+          <button type="button" data-aktion="geschlecht" data-wert="frau">Frau</button>
+        </div>
+        <!-- Umschalter Vorderseite / Rückseite (nur auf dem Smartphone sichtbar) -->
+        <div class="segment seiten-schalter" id="schalter-seite" role="group" aria-label="Körperseite wählen">
+          <button type="button" data-aktion="ansicht" data-wert="vorne" class="aktiv">Vorderseite</button>
+          <button type="button" data-aktion="ansicht" data-wert="hinten">Rückseite</button>
+        </div>
+      </div>
+
+      <!-- Hier zeichnet JavaScript die Körperfiguren -->
+      <div class="wischbereich" id="wischbereich">
+        <div class="figuren" id="figuren"></div>
+      </div>
+      <div class="punkte" id="punkte" aria-hidden="true"><i class="aktiv"></i><i></i></div>
+      <p class="wisch-hinweis">Zum Wechseln der Körperseite nach links oder rechts wischen</p>
+
+      <!-- Farblegende -->
+      <div class="legende" aria-label="Legende der Statusfarben">
+        <span class="s-inactive"><i></i>Noch keine Daten</span>
+        <span class="s-starter"><i></i>Starter (1–20)</span>
+        <span class="s-rising"><i></i>Rising (21–40)</span>
+        <span class="s-advanced"><i></i>Advanced (41–70)</span>
+        <span class="s-elite"><i></i>Elite (71–100)</span>
+      </div>
+    </section>
+
+    <!-- Muskelprofil: Vollbild auf dem Smartphone, Inhaltsbereich auf großen Bildschirmen -->
+    <aside id="profil-bereich" class="profil-bereich" aria-live="polite"></aside>
+  </div>
+</main>
+
+<!-- SEITE 2: TRAINING -->
+<main id="seite-training" class="seite">
+  <div class="seitenkopf"><span class="marke">mamu</span><h1>Training</h1></div>
+  <div id="training-inhalt"></div>
+</main>
+
+<!-- SEITE 3: STATISTIKEN -->
+<main id="seite-statistik" class="seite">
+  <div class="seitenkopf"><span class="marke">mamu</span><h1>Statistiken</h1></div>
+  <div id="statistik-inhalt"></div>
+</main>
+
+<!-- SEITE 4: ERNÄHRUNG -->
+<main id="seite-ernaehrung" class="seite">
+  <div class="seitenkopf"><span class="marke">mamu</span><h1>Ernährung</h1></div>
+  <div id="ernaehrung-inhalt"></div>
+</main>
+
+<!-- SEITE 5: MEHR -->
+<main id="seite-mehr" class="seite">
+  <div class="seitenkopf"><span class="marke">mamu</span><h1>Mehr</h1></div>
+  <div id="mehr-inhalt"></div>
+</main>
+
+<!-- =====================================================================
+     UNTERE NAVIGATIONSLEISTE (immer sichtbar)
+     ===================================================================== -->
+<nav class="nav" aria-label="Hauptnavigation">
+  <div class="nav-innen">
+    <button type="button" data-aktion="seite" data-wert="koerper" class="aktiv" aria-current="page">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2.5"/><path d="M12 8v7M7.5 10.5 12 9l4.5 1.5M9 21l3-6 3 6"/></svg></span>Körper
+    </button>
+    <button type="button" data-aktion="seite" data-wert="training">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg></span>Training
+    </button>
+    <button type="button" data-aktion="seite" data-wert="statistik">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M5 20v-9M12 20V4M19 20v-6"/></svg></span>Statistiken
+    </button>
+    <button type="button" data-aktion="seite" data-wert="ernaehrung">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 8c-2-2-6-1-6 4 0 4 2 8 4 8 1 0 1.5-.5 2-.5s1 .5 2 .5c2 0 4-4 4-8 0-5-4-6-6-4zM12 8c0-2 1-3 3-3"/></svg></span>Ernährung
+    </button>
+    <button type="button" data-aktion="seite" data-wert="mehr">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg></span>Mehr
+    </button>
+  </div>
+</nav>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+
+/* ======================================================================
+   ABSCHNITT A: Bestehende Algorithmen von mamu (UNVERÄNDERT)
+   Die folgenden drei Blöcke sind wortgleiche Kopien aus den Dateien
+   ernaehrung.js, uebungsempfehlung.js und berechnung.js.
+   Im Browser gibt es kein require(), deshalb stehen sie hier direkt.
+   Sobald mamu über einen Node.js-Server läuft, können diese Blöcke durch
+   Anfragen an den Server ersetzt werden.
+   ====================================================================== */
+
+// ---------- A1: Ernährung (aus ernaehrung.js) ----------
+function berechneErnaehrung(gewicht, anzahlUebungen, ziel) {
+    // Eingaben prüfen
+    if (typeof gewicht !== "number" || isNaN(gewicht) || gewicht <= 0) {
+        return { ok: false, fehler: "Bitte ein gültiges Gewicht größer als 0 eingeben." };
+    }
+    if (!Number.isInteger(anzahlUebungen) || anzahlUebungen < 0 || anzahlUebungen > 8) {
+        return { ok: false, fehler: "Die Anzahl der Übungen muss eine ganze Zahl zwischen 0 und 8 sein." };
+    }
+
+    // Ziel vereinheitlichen (Groß-/Kleinschreibung egal)
+    const zielKlein = String(ziel).trim().toLowerCase();
+
+    // Aktivitätslevel bestimmen
+    let AK, AP;
+    if (anzahlUebungen <= 2) {
+        AK = 1.0; AP = 1.0;
+    } else if (anzahlUebungen <= 5) {
+        AK = 1.1; AP = 1.5;
+    } else {
+        AK = 1.2; AP = 2.0;
+    }
+
+    // Muskelaufbau verwendet immer AP = 2
+    if (zielKlein === "muskelaufbau") {
+        AP = 2.0;
+    }
+
+    // Kalorienbedarf je nach Ziel
+    const grundbedarf = gewicht * 30 * AK;
+    let kalorien;
+
+    switch (zielKlein) {
+        case "gewicht halten": kalorien = grundbedarf; break;
+        case "zunehmen":       kalorien = grundbedarf + 400; break;
+        case "abnehmen":       kalorien = grundbedarf - 300; break;
+        case "muskelaufbau":   kalorien = grundbedarf + 300; break;
+        default:
+            return { ok: false, fehler: "Ungültiges Ziel. Erlaubt: Zunehmen, Abnehmen, Muskelaufbau, Gewicht halten." };
+    }
+
+    const protein = gewicht * AP;
+
+    return {
+        ok: true,
+        kalorien: Math.round(kalorien),
+        protein: Math.round(protein)
+    };
+}
+
+
+// ---------- A2: Übungskatalog und Übungsempfehlung (aus uebungsempfehlung.js) ----------
+// ============================================================
+// Übungsauswahl für die mamu-App
+// Eingaben: Muskelgruppe, Trainingsziel, Trainingsstatus
+// Ausgabe: genau 3 Übungen mit Sätzen und Wiederholungen
+// ============================================================
+
+// ---------- 1. Übungskatalog ----------
+const uebungskatalog = {
+  "Schultern": [
+    { name: "Shoulder Press", beschreibung: "Hanteln oder eine Langhantel über den Kopf drücken, um die Schultermuskulatur zu trainieren." },
+    { name: "Seitheben", beschreibung: "Hanteln seitlich bis ungefähr auf Schulterhöhe anheben." },
+    { name: "Frontheben", beschreibung: "Hanteln kontrolliert vor dem Körper bis auf Schulterhöhe anheben." }
+  ],
+  "Brust": [
+    { name: "Bankdrücken", beschreibung: "Eine Langhantel oder Hanteln im Liegen kontrolliert von der Brust nach oben drücken." },
+    { name: "Liegestütze", beschreibung: "Den Körper aus einer stabilen Liegestützposition absenken und wieder nach oben drücken." },
+    { name: "Butterfly", beschreibung: "Die Arme an einer Butterfly-Maschine vor dem Körper zusammenführen." }
+  ],
+  "Bizeps": [
+    { name: "Bizepscurls", beschreibung: "Hanteln durch Beugen der Ellenbogen in Richtung Schultern anheben." },
+    { name: "Hammer Curls", beschreibung: "Hanteln mit neutraler Handstellung und den Handflächen zueinander anheben." },
+    { name: "Preacher Curls", beschreibung: "Die Arme auf einem Curl-Pult abstützen und das Gewicht kontrolliert anheben." }
+  ],
+  "Bauch": [
+    { name: "Crunches", beschreibung: "Den Oberkörper aus der Rückenlage durch Anspannen der Bauchmuskulatur leicht anheben." },
+    { name: "Plank", beschreibung: "Den Körper in einer geraden Position auf Unterarmen und Zehenspitzen stabil halten." },
+    { name: "Beinheben", beschreibung: "Die gestreckten oder leicht gebeugten Beine aus der Rückenlage kontrolliert anheben und absenken." }
+  ],
+  "Oberschenkel": [
+    { name: "Beinpresse", beschreibung: "Das Gewicht mit den Beinen kontrolliert von sich wegdrücken." },
+    { name: "Beinstrecker", beschreibung: "Die Unterschenkel an einer Maschine gegen Widerstand nach vorne strecken." },
+    { name: "Bulgarian Split Squats", beschreibung: "In versetzter Beinstellung mit dem hinteren Fuß auf einer Erhöhung kontrolliert in die Kniebeuge gehen." }
+  ],
+  "Waden": [
+    { name: "Wadenheben stehend", beschreibung: "Die Fersen anheben und auf die Fußballen stellen." },
+    { name: "Wadenheben sitzend", beschreibung: "Im Sitzen die Fersen gegen Widerstand anheben." },
+    { name: "Donkey Calf Raises", beschreibung: "Mit nach vorne geneigtem Oberkörper die Fersen kontrolliert anheben." }
+  ],
+  "Nacken": [
+    { name: "Shrugs", beschreibung: "Die Schultern mit oder ohne Hanteln kontrolliert in Richtung Ohren anheben." },
+    { name: "Nackenstreckung", beschreibung: "Den Kopf gegen einen sehr leichten Widerstand kontrolliert nach hinten bewegen." },
+    { name: "Nackenbeugung", beschreibung: "Den Kopf gegen einen sehr leichten Widerstand kontrolliert nach vorne bewegen." }
+  ],
+  "Rücken": [
+    { name: "Lat Pulldown", beschreibung: "Eine Stange kontrolliert von oben in Richtung Brust ziehen." },
+    { name: "Rudern", beschreibung: "Ein Gewicht kontrolliert in Richtung Bauch ziehen und die Schulterblätter zusammenführen." },
+    { name: "Rückenstrecker", beschreibung: "Den Oberkörper aus einer nach vorne geneigten Position kontrolliert aufrichten." }
+  ],
+  "Trizeps": [
+    { name: "Trizepsdrücken", beschreibung: "Ein Seil oder eine Stange am Kabelzug durch Strecken der Ellenbogen nach unten drücken." },
+    { name: "Dips", beschreibung: "Den Körper mit den Armen absenken und wieder nach oben drücken." },
+    { name: "Overhead Extensions", beschreibung: "Ein Gewicht hinter dem Kopf durch Strecken der Ellenbogen nach oben bewegen." }
+  ],
+  "Gesäß": [
+    { name: "Hip Thrust", beschreibung: "Die Hüfte mit einer Hantel oder Langhantel kontrolliert nach oben drücken." },
+    { name: "Romanian Deadlift", beschreibung: "Die Hüfte nach hinten schieben und das Gewicht mit leicht gebeugten Knien kontrolliert absenken." },
+    { name: "Glute Bridge", beschreibung: "Das Becken aus der Rückenlage durch Anspannen der Gesäßmuskulatur anheben." }
+  ],
+  "Beine": [
+    { name: "Kniebeugen", beschreibung: "Die Hüfte nach hinten und unten bewegen und anschließend kontrolliert wieder aufstehen." },
+    { name: "Ausfallschritte", beschreibung: "Einen Schritt nach vorne machen, beide Knie beugen und wieder in die Ausgangsposition zurückkehren." },
+    { name: "Beinpresse", beschreibung: "Das Gewicht mit beiden Beinen kontrolliert wegdrücken." }
+  ]
+};
+
+// ---------- 2. Das Trainingsziel bestimmt die Wiederholungen ----------
+const trainingsziele = {
+  "Muskelaufbau":   { wiederholungen: "8–12",  zweck: "Muskelwachstum fördern" },
+  "Abnehmen":       { wiederholungen: "12–15", zweck: "Muskulatur erhalten und das Training unterstützen" },
+  "Gewicht halten": { wiederholungen: "10–12", zweck: "Kraft und Muskulatur erhalten" },
+  "Zunehmen":       { wiederholungen: "8–12",  zweck: "Körpergewicht und Muskelmasse erhöhen" }
+};
+
+// ---------- 3. Der Trainingsstatus bestimmt NUR die Sätze ----------
+const saetzeProStatus = {
+  "Starter": 2,
+  "Rising": 3,
+  "Advanced": 3,
+  "Elite": 4
+};
+
+// ---------- 4. Hilfsfunktion ----------
+// Sucht einen Eintrag, egal ob groß oder klein geschrieben wurde.
+// Gibt den richtigen Namen zurück oder null, wenn nichts passt.
+function findeSchluessel(objekt, eingabe) {
+  if (typeof eingabe !== "string") {
+    return null;
+  }
+  const gesucht = eingabe.trim().toLowerCase();
+  const alleNamen = Object.keys(objekt);
+  for (let i = 0; i < alleNamen.length; i++) {
+    if (alleNamen[i].toLowerCase() === gesucht) {
+      return alleNamen[i];
+    }
+  }
+  return null;
+}
+
+// ---------- 5. Hauptfunktion: der Algorithmus ----------
+function waehleUebungen(muskelgruppe, trainingsziel, trainingsstatus) {
+
+  // Schritt 1: Muskelgruppe prüfen
+  const gruppe = findeSchluessel(uebungskatalog, muskelgruppe);
+  if (gruppe === null) {
+    return {
+      ok: false,
+      fehler: "Ungültige Muskelgruppe. Erlaubt sind: " + Object.keys(uebungskatalog).join(", ") + "."
+    };
+  }
+
+  // Schritt 2: Trainingsziel prüfen
+  const ziel = findeSchluessel(trainingsziele, trainingsziel);
+  if (ziel === null) {
+    return {
+      ok: false,
+      fehler: "Ungültiges Trainingsziel. Erlaubt sind: " + Object.keys(trainingsziele).join(", ") + "."
+    };
+  }
+
+  // Schritt 3: Trainingsstatus prüfen (fehlt er, wird Starter verwendet)
+  let status;
+  const statusFehlt = (trainingsstatus === undefined ||
+                       trainingsstatus === null ||
+                       String(trainingsstatus).trim() === "");
+  if (statusFehlt) {
+    status = "Starter";
+  } else {
+    status = findeSchluessel(saetzeProStatus, trainingsstatus);
+    if (status === null) {
+      return {
+        ok: false,
+        fehler: "Ungültiger Trainingsstatus. Erlaubt sind: " + Object.keys(saetzeProStatus).join(", ") + "."
+      };
+    }
+  }
+
+  // Schritt 4: Sätze und Wiederholungen bestimmen
+  const saetze = saetzeProStatus[status];                      // nur vom Status abhängig
+  const wiederholungen = trainingsziele[ziel].wiederholungen;  // nur vom Ziel abhängig
+
+  // Schritt 5: die drei Übungen der Muskelgruppe aus dem Katalog nehmen
+  // (immer genau drei, immer dieselben, nicht zufällig)
+  const katalogUebungen = uebungskatalog[gruppe];
+  const ergebnisUebungen = [];
+  for (let i = 0; i < 3; i++) {
+    ergebnisUebungen.push({
+      name: katalogUebungen[i].name,
+      beschreibung: katalogUebungen[i].beschreibung,
+      saetze: saetze,
+      wiederholungen: wiederholungen
+    });
+  }
+
+  // Schritt 6: Sicherheitshinweis bei Nackenübungen
+  let hinweis = null;
+  if (gruppe === "Nacken") {
+    hinweis = "Sicherheitshinweis: Nackenübungen nur mit sehr leichtem Widerstand " +
+              "und ohne ruckartige Bewegungen ausführen.";
+  }
+
+  return {
+    ok: true,
+    muskelgruppe: gruppe,
+    trainingsziel: ziel,
+    zweck: trainingsziele[ziel].zweck,
+    trainingsstatus: status,
+    uebungen: ergebnisUebungen,
+    hinweis: hinweis
+  };
+}
+
+
+// ---------- A3: Score-Berechnung und Status (aus berechnung.js) ----------
+// ---------- Feste Werte aus den Projektvorgaben ----------
+const BETRACHTETE_TAGE = 30;     // Trainingshäufigkeit: letzte 30 Tage
+const ZIEL_TRAININGSTAGE = 12;   // 12 Trainingstage        -> volle Punkte
+const ZIEL_VERHAELTNIS = 1.0;    // Gewicht / Körpergewicht = 1,0 -> volle Punkte
+const ZIEL_WIEDERHOLUNGEN = 15;  // 15 Wiederholungen pro Satz -> volle Punkte
+const ZIEL_SAETZE = 4;           // 4 Sätze                 -> volle Punkte
+
+const MAX_HAEUFIGKEIT = 20;
+const MAX_RELATIVE_LEISTUNG = 20;
+const MAX_WIEDERHOLUNGEN = 15;
+const MAX_SAETZE = 15;
+
+// ---------- Datum ----------
+
+// Heutiges Datum im Format JJJJ-MM-TT (Ortszeit)
+function heutigesDatum() {
+  const jetzt = new Date();
+  const monat = String(jetzt.getMonth() + 1).padStart(2, "0");
+  const tag = String(jetzt.getDate()).padStart(2, "0");
+  return jetzt.getFullYear() + "-" + monat + "-" + tag;
+}
+
+// Prüft, ob ein Text ein echtes Datum im Format JJJJ-MM-TT ist
+function istGueltigesDatum(text) {
+  if (typeof text !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return false;
+  }
+  const datum = new Date(text + "T00:00:00Z");
+  if (isNaN(datum.getTime())) {
+    return false;
+  }
+  // 2026-02-30 würde sonst zu 2026-03-02 umgerechnet werden
+  return datum.toISOString().slice(0, 10) === text;
+}
+
+// Anzahl Tage zwischen zwei Datumsangaben (spaeter - frueher)
+function tageZwischen(frueher, spaeter) {
+  const a = new Date(frueher + "T00:00:00Z");
+  const b = new Date(spaeter + "T00:00:00Z");
+  return Math.round((b - a) / (24 * 60 * 60 * 1000));
+}
+
+// Sortiert Einheiten nach Datum (älteste zuerst). Bei gleichem Datum entscheidet die ID.
+function sortiereChronologisch(einheiten) {
+  const kopie = einheiten.slice();
+  kopie.sort(function (a, b) {
+    if (a.datum < b.datum) return -1;
+    if (a.datum > b.datum) return 1;
+    return a.id - b.id;
+  });
+  return kopie;
+}
+
+// ---------- Hilfsfunktionen für Punkte ----------
+
+// Punkte proportional zum Zielwert, aber höchstens die Maximalpunkte
+function punkteNachAnteil(wert, zielwert, maxPunkte) {
+  const punkte = (wert / zielwert) * maxPunkte;
+  if (punkte > maxPunkte) {
+    return maxPunkte;
+  }
+  return punkte;
+}
+
+// Rundet auf eine Nachkommastelle (nur für die Anzeige der Teilpunkte)
+function rundeEineStelle(zahl) {
+  return Math.round(zahl * 10) / 10;
+}
+
+// Größter Wert eines Feldes (z. B. "gewicht") in einer Liste von Einheiten
+function hoechsterWert(einheiten, feld) {
+  let maximum = 0;
+  for (let i = 0; i < einheiten.length; i++) {
+    if (einheiten[i][feld] > maximum) {
+      maximum = einheiten[i][feld];
+    }
+  }
+  return maximum;
+}
+
+// ---------- Teilbereich 1: Trainingshäufigkeit ----------
+// Zählt die verschiedenen Trainingstage der letzten 30 Tage
+// (heute und die 29 Tage davor = 30 Kalendertage).
+function zaehleTrainingstage(einheiten, heute) {
+  const schonGezaehlt = {};
+  let anzahl = 0;
+  for (let i = 0; i < einheiten.length; i++) {
+    const tage = tageZwischen(einheiten[i].datum, heute);
+    if (tage >= 0 && tage < BETRACHTETE_TAGE && !schonGezaehlt[einheiten[i].datum]) {
+      schonGezaehlt[einheiten[i].datum] = true;
+      anzahl++;
+    }
+  }
+  return anzahl;
+}
+
+// ---------- Teilbereich 5: Entwicklung über die Zeit ----------
+
+// Verbesserung: mehr Gewicht ODER bei gleichem Gewicht mehr Wiederholungen insgesamt
+function istVerbesserung(alt, neu) {
+  if (neu.gewicht > alt.gewicht) {
+    return true;
+  }
+  if (neu.gewicht === alt.gewicht) {
+    return neu.wiederholungen * neu.saetze > alt.wiederholungen * alt.saetze;
+  }
+  return false;
+}
+
+// Vergleicht aufeinanderfolgende Einträge DERSELBEN Übung.
+// Liefert: Anzahl Vergleiche, Anzahl Verbesserungen, längste Serie von Verbesserungen
+function analysiereEntwicklung(einheiten) {
+  const sortiert = sortiereChronologisch(einheiten);
+
+  // Einträge nach Übung sortieren (jede Übung nur mit sich selbst vergleichen)
+  const proUebung = {};
+  for (let i = 0; i < sortiert.length; i++) {
+    const name = sortiert[i].uebung;
+    if (!proUebung[name]) {
+      proUebung[name] = [];
+    }
+    proUebung[name].push(sortiert[i]);
+  }
+
+  let vergleiche = 0;
+  let verbesserungen = 0;
+  let laengsteSerie = 0;
+
+  const namen = Object.keys(proUebung);
+  for (let n = 0; n < namen.length; n++) {
+    const liste = proUebung[namen[n]];
+    let serie = 0;
+    for (let i = 1; i < liste.length; i++) {
+      vergleiche++;
+      if (istVerbesserung(liste[i - 1], liste[i])) {
+        verbesserungen++;
+        serie++;
+        if (serie > laengsteSerie) {
+          laengsteSerie = serie;
+        }
+      } else {
+        serie = 0;
+      }
+    }
+  }
+
+  return { vergleiche: vergleiche, verbesserungen: verbesserungen, laengsteSerie: laengsteSerie };
+}
+
+// 30 / 20 / 10 / 0 Punkte je nach Entwicklung
+function punkteEntwicklung(analyse) {
+  if (analyse.laengsteSerie >= 3) {
+    return 30;
+  }
+  let quote = 0;
+  if (analyse.vergleiche > 0) {
+    quote = analyse.verbesserungen / analyse.vergleiche;
+  }
+  if (analyse.verbesserungen >= 2 && quote >= 0.5) {
+    return 20;
+  }
+  if (analyse.verbesserungen >= 1) {
+    return 10;
+  }
+  return 0;
+}
+
+// ---------- Status und Farbe ----------
+function bestimmeStatus(score, hatTrainingsdaten) {
+  if (!hatTrainingsdaten) return { status: "Inactive", farbe: "Weiß" };
+  if (score <= 20) return { status: "Starter", farbe: "Rot" };
+  if (score <= 40) return { status: "Rising", farbe: "Orange" };
+  if (score <= 70) return { status: "Advanced", farbe: "Gelb" };
+  return { status: "Elite", farbe: "Grün" };
+}
+
+// Ergebnis für eine Muskelgruppe ohne Trainingsdaten
+function leereMuskelgruppe() {
+  return {
+    score: 0,
+    status: "Inactive",
+    farbe: "Weiß",
+    teilpunkte: { haeufigkeit: 0, relativeLeistung: 0, wiederholungen: 0, saetze: 0, entwicklung: 0 },
+    hinweis: null
+  };
+}
+
+// ---------- Hauptfunktion: Score einer Muskelgruppe ----------
+// einheiten: nur die Einheiten DIESER Muskelgruppe
+// koerpergewicht: Zahl oder null (wenn unbekannt)
+function berechneMuskelgruppe(einheiten, koerpergewicht, heute) {
+  if (einheiten.length === 0) {
+    return leereMuskelgruppe();
+  }
+
+  // 1. Trainingshäufigkeit (max. 20)
+  const trainingstage = zaehleTrainingstage(einheiten, heute);
+  const haeufigkeit = punkteNachAnteil(trainingstage, ZIEL_TRAININGSTAGE, MAX_HAEUFIGKEIT);
+
+  // 2. Relative Trainingsleistung (max. 20): höchstes Gewicht / Körpergewicht
+  let relativeLeistung = 0;
+  let hinweis = null;
+  if (typeof koerpergewicht === "number" && koerpergewicht > 0) {
+    const verhaeltnis = hoechsterWert(einheiten, "gewicht") / koerpergewicht;
+    relativeLeistung = punkteNachAnteil(verhaeltnis, ZIEL_VERHAELTNIS, MAX_RELATIVE_LEISTUNG);
+  } else {
+    hinweis = "Es ist kein Körpergewicht gespeichert. Die relative Trainingsleistung kann nicht berechnet werden " +
+              "(0 Punkte dafür). Die Trainingsdaten bleiben unverändert erhalten.";
+  }
+
+  // 3. Wiederholungen (max. 15): höchste Wiederholungszahl pro Satz
+  const wiederholungen = punkteNachAnteil(hoechsterWert(einheiten, "wiederholungen"), ZIEL_WIEDERHOLUNGEN, MAX_WIEDERHOLUNGEN);
+
+  // 4. Sätze (max. 15): höchste Satzzahl
+  const saetze = punkteNachAnteil(hoechsterWert(einheiten, "saetze"), ZIEL_SAETZE, MAX_SAETZE);
+
+  // 5. Entwicklung über die Zeit (max. 30)
+  const entwicklung = punkteEntwicklung(analysiereEntwicklung(einheiten));
+
+  // Gesamtscore: addieren, auf höchstens 100 begrenzen, kaufmännisch runden
+  let summe = haeufigkeit + relativeLeistung + wiederholungen + saetze + entwicklung;
+  if (summe > 100) {
+    summe = 100;
+  }
+  const score = Math.round(summe);
+
+  const statusInfo = bestimmeStatus(score, true);
+
+  return {
+    score: score,
+    status: statusInfo.status,
+    farbe: statusInfo.farbe,
+    teilpunkte: {
+      haeufigkeit: rundeEineStelle(haeufigkeit),
+      relativeLeistung: rundeEineStelle(relativeLeistung),
+      wiederholungen: rundeEineStelle(wiederholungen),
+      saetze: rundeEineStelle(saetze),
+      entwicklung: entwicklung
+    },
+    hinweis: hinweis
+  };
+}
+
+// ---------- Aktivitätslevel (aus der Anzahl der Übungen) ----------
+
+// Zählt, wie viele verschiedene Übungen an einem Tag absolviert wurden.
+// (Nicht verwechseln mit den Trainingstagen!)
+function zaehleUebungenAmTag(einheiten, datum) {
+  const schonGezaehlt = {};
+  let anzahl = 0;
+  for (let i = 0; i < einheiten.length; i++) {
+    if (einheiten[i].datum === datum) {
+      const schluessel = einheiten[i].muskelgruppe + "|" + einheiten[i].uebung;
+      if (!schonGezaehlt[schluessel]) {
+        schonGezaehlt[schluessel] = true;
+        anzahl++;
+      }
+    }
+  }
+  return anzahl;
+}
+
+// 0-2 Übungen: niedrig, 3-5: mittel, ab 6: hoch
+function bestimmeAktivitaetslevel(anzahlUebungen) {
+  if (anzahlUebungen <= 2) return "niedrig";
+  if (anzahlUebungen <= 5) return "mittel";
+  return "hoch";
+}
+
+/* ======================================================================
+   ABSCHNITT B: Hilfsfunktionen
+   ====================================================================== */
+
+// Alle elf Muskelgruppen (aus dem Übungskatalog)
+const MUSKELGRUPPEN = Object.keys(uebungskatalog);
+
+// Zuordnung Status -> CSS-Klasse (Farbe)
+const STATUS_KLASSE = {
+  "Inactive": "s-inactive",
+  "Starter": "s-starter",
+  "Rising": "s-rising",
+  "Advanced": "s-advanced",
+  "Elite": "s-elite"
+};
+
+// Kurzform für document.getElementById
+function $(id) {
+  return document.getElementById(id);
+}
+
+// Macht Text sicher für die Anzeige in HTML (verhindert eingeschleusten Code)
+function esc(text) {
+  return String(text)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+// Zahl im deutschen Format (Komma als Dezimaltrennzeichen)
+function zahl(wert, stellen) {
+  const maximal = (stellen === undefined) ? 1 : stellen;
+  return Number(wert).toLocaleString("de-DE", { maximumFractionDigits: maximal });
+}
+
+// Datum von vor n Tagen (Format JJJJ-MM-TT)
+function datumVorTagen(datum, tage) {
+  const d = new Date(datum + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() - tage);
+  return d.toISOString().slice(0, 10);
+}
+
+// 2026-10-01 -> "Heute", "Gestern" oder "01.10.2026"
+function formatDatum(datum) {
+  const heute = heutigesDatum();
+  if (datum === heute) return "Heute";
+  if (datum === datumVorTagen(heute, 1)) return "Gestern";
+  return datum.slice(8, 10) + "." + datum.slice(5, 7) + "." + datum.slice(0, 4);
+}
+
+// Kurzes Datum für Diagramme: 01.10.
+function kurzDatum(datum) {
+  return datum.slice(8, 10) + "." + datum.slice(5, 7) + ".";
+}
+
+// Kurze Rückmeldung unten im Bild
+let toastTimer = null;
+function zeigeToast(text) {
+  const t = $("toast");
+  t.textContent = text;
+  t.classList.add("sichtbar");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.classList.remove("sichtbar"); }, 2600);
+}
+
+
+/* ======================================================================
+   ABSCHNITT C: Speicherung
+   Die Daten werden im Browser (localStorage) abgelegt. Später kann dieser
+   Abschnitt durch Aufrufe an den Node.js-Server ersetzt werden, der die
+   JSON-Dateien (trainingseinheiten.json, profil.json, ...) schreibt.
+   Funktioniert localStorage nicht (z. B. gesperrt), bleiben die Daten
+   nur bis zum Schließen der Seite im Arbeitsspeicher.
+   ====================================================================== */
+
+const SCHLUESSEL = {
+  einheiten: "mamu_trainingseinheiten",   // entspricht trainingseinheiten.json
+  profil: "mamu_profil",                  // entspricht profil.json
+  eigeneUebungen: "mamu_eigene_uebungen",
+  einstellungen: "mamu_einstellungen",
+  angaben: "mamu_angaben"
+};
+
+const gedaechtnis = {};       // Zwischenspeicher im Arbeitsspeicher
+const gesperrt = {};          // Schlüssel, deren gespeicherte Daten nicht lesbar waren
+let speicherFunktioniert = true;
+
+// Liest einen Wert. Sind die gespeicherten Daten kaputt, wird NICHT überschrieben.
+function ladeWert(schluessel, standard) {
+  if (gedaechtnis[schluessel] !== undefined) {
+    return JSON.parse(gedaechtnis[schluessel]);
+  }
+  let text = null;
+  try {
+    text = window.localStorage.getItem(schluessel);
+  } catch (fehler) {
+    speicherFunktioniert = false;
+  }
+  if (text === null) {
+    return standard;
+  }
+  try {
+    return JSON.parse(text);
+  } catch (fehler) {
+    gesperrt[schluessel] = true;       // kaputte Daten bleiben unverändert
+    return standard;
+  }
+}
+
+// Speichert einen Wert. Gibt true zurück, wenn es geklappt hat.
+function speichereWert(schluessel, wert) {
+  if (gesperrt[schluessel]) {
+    return false;
+  }
+  const text = JSON.stringify(wert);
+  gedaechtnis[schluessel] = text;
+  try {
+    window.localStorage.setItem(schluessel, text);
+  } catch (fehler) {
+    speicherFunktioniert = false;
+  }
+  return true;
+}
+
+const FEHLER_GESPERRT = "Die gespeicherten Daten konnten nicht gelesen werden. Es wurde nichts überschrieben.";
+
+
+/* ======================================================================
+   ABSCHNITT D: Verwaltung der Trainingsdaten
+   Gleiche Aufgaben und Regeln wie trainingsdaten.js (Node.js):
+   prüfen, speichern, löschen, Status berechnen.
+   Erweiterung der Oberfläche: Eigene Übungen dürfen angelegt werden.
+   ====================================================================== */
+
+function ladeEinheitenDaten() {
+  return ladeWert(SCHLUESSEL.einheiten, { naechsteId: 1, einheiten: [] });
+}
+
+function holeAlleEinheiten() {
+  return ladeEinheitenDaten().einheiten;
+}
+
+// Körpergewicht aus dem Profil (Zahl) oder null, wenn keins gespeichert ist
+function holeKoerpergewicht() {
+  const profil = ladeWert(SCHLUESSEL.profil, { koerpergewicht: null });
+  if (typeof profil.koerpergewicht === "number" && profil.koerpergewicht > 0) {
+    return profil.koerpergewicht;
+  }
+  return null;
+}
+
+function speichereKoerpergewicht(gewicht) {
+  const wert = Number(gewicht);
+  if (gewicht === "" || gewicht === null || !isFinite(wert) || wert <= 0) {
+    return { ok: false, fehler: "Das Körpergewicht muss eine Zahl größer als 0 sein." };
+  }
+  if (!speichereWert(SCHLUESSEL.profil, { koerpergewicht: wert })) {
+    return { ok: false, fehler: FEHLER_GESPERRT };
+  }
+  return { ok: true, koerpergewicht: wert };
+}
+
+// ----- Eigene Übungen -----
+function holeEigeneUebungen(gruppe) {
+  const alle = ladeWert(SCHLUESSEL.eigeneUebungen, {});
+  return alle[gruppe] || [];
+}
+
+// Übungsnamen einer Muskelgruppe: Katalog + eigene Übungen
+function holeUebungsnamen(gruppe) {
+  const namen = [];
+  for (let i = 0; i < uebungskatalog[gruppe].length; i++) {
+    namen.push(uebungskatalog[gruppe][i].name);
+  }
+  const eigene = holeEigeneUebungen(gruppe);
+  for (let j = 0; j < eigene.length; j++) {
+    namen.push(eigene[j]);
+  }
+  return namen;
+}
+
+function speichereEigeneUebung(gruppe, eingabe) {
+  const name = String(eingabe).trim().replace(/\s+/g, " ");
+  if (name.length < 2 || name.length > 40) {
+    return { ok: false, fehler: "Der Name der Übung muss 2 bis 40 Zeichen lang sein." };
+  }
+  if (!/[A-Za-zÄÖÜäöüß]/.test(name)) {
+    return { ok: false, fehler: "Der Name der Übung muss Buchstaben enthalten." };
+  }
+  if (findeSchluessel(arrayAlsObjekt(holeUebungsnamen(gruppe)), name) !== null) {
+    return { ok: false, fehler: "Diese Übung gibt es bei " + gruppe + " bereits." };
+  }
+  const alle = ladeWert(SCHLUESSEL.eigeneUebungen, {});
+  if (!alle[gruppe]) {
+    alle[gruppe] = [];
+  }
+  alle[gruppe].push(name);
+  if (!speichereWert(SCHLUESSEL.eigeneUebungen, alle)) {
+    return { ok: false, fehler: FEHLER_GESPERRT };
+  }
+  return { ok: true, name: name };
+}
+
+function loescheEigeneUebung(gruppe, name) {
+  const alle = ladeWert(SCHLUESSEL.eigeneUebungen, {});
+  const neu = [];
+  const liste = alle[gruppe] || [];
+  for (let i = 0; i < liste.length; i++) {
+    if (liste[i] !== name) neu.push(liste[i]);
+  }
+  alle[gruppe] = neu;
+  speichereWert(SCHLUESSEL.eigeneUebungen, alle);
+}
+
+// Hilfsfunktion: macht aus einer Namensliste ein Objekt, damit findeSchluessel() sie durchsuchen kann
+function arrayAlsObjekt(liste) {
+  const objekt = {};
+  for (let i = 0; i < liste.length; i++) {
+    objekt[liste[i]] = true;
+  }
+  return objekt;
+}
+
+// ----- Eingaben prüfen (gleiche Regeln wie in trainingsdaten.js) -----
+function pruefeEinheit(eingabe) {
+  const felder = [["muskelgruppe", "Muskelgruppe"], ["uebung", "Übung"], ["gewicht", "Gewicht"],
+                  ["wiederholungen", "Wiederholungen"], ["saetze", "Sätze"]];
+  const fehlend = [];
+  for (let i = 0; i < felder.length; i++) {
+    const wert = eingabe[felder[i][0]];
+    if (wert === undefined || wert === null || String(wert).trim() === "") {
+      fehlend.push(felder[i][1]);
+    }
+  }
+  if (fehlend.length > 0) {
+    return { ok: false, fehler: "Pflichtfelder fehlen: " + fehlend.join(", ") + "." };
+  }
+
+  const gruppe = findeSchluessel(uebungskatalog, eingabe.muskelgruppe);
+  if (gruppe === null) {
+    return { ok: false, fehler: "Ungültige Muskelgruppe." };
+  }
+  const uebung = findeSchluessel(arrayAlsObjekt(holeUebungsnamen(gruppe)), eingabe.uebung);
+  if (uebung === null) {
+    return { ok: false, fehler: "Die Übung \"" + eingabe.uebung + "\" gehört nicht zur Muskelgruppe " + gruppe + "." };
+  }
+
+  const gewicht = Number(eingabe.gewicht);
+  if (!isFinite(gewicht)) return { ok: false, fehler: "Das Gewicht muss eine Zahl sein." };
+  if (gewicht < 0) return { ok: false, fehler: "Das Gewicht darf nicht negativ sein." };
+  const wiederholungen = Number(eingabe.wiederholungen);
+  if (!Number.isInteger(wiederholungen) || wiederholungen <= 0) {
+    return { ok: false, fehler: "Die Wiederholungen müssen eine ganze Zahl größer als 0 sein." };
+  }
+  const saetze = Number(eingabe.saetze);
+  if (!Number.isInteger(saetze) || saetze <= 0) {
+    return { ok: false, fehler: "Die Sätze müssen eine ganze Zahl größer als 0 sein." };
+  }
+
+  const heute = heutigesDatum();
+  let datum = heute;
+  if (eingabe.datum !== undefined && eingabe.datum !== null && String(eingabe.datum).trim() !== "") {
+    datum = String(eingabe.datum).trim();
+    if (!istGueltigesDatum(datum)) {
+      return { ok: false, fehler: "Das Datum muss ein echtes Datum sein (JJJJ-MM-TT)." };
+    }
+    if (datum > heute) {
+      return { ok: false, fehler: "Das Datum darf nicht in der Zukunft liegen." };
+    }
+  }
+
+  return { ok: true, einheit: { muskelgruppe: gruppe, uebung: uebung, gewicht: gewicht,
+                                wiederholungen: wiederholungen, saetze: saetze, datum: datum } };
+}
+
+// Speichert mehrere Übungen eines Trainings auf einmal.
+// Zuerst werden ALLE geprüft; nur wenn alles gültig ist, wird gespeichert.
+function fuegeTrainingseinheitenHinzu(liste) {
+  const geprueft = [];
+  for (let i = 0; i < liste.length; i++) {
+    const ergebnis = pruefeEinheit(liste[i]);
+    if (!ergebnis.ok) {
+      return { ok: false, fehler: liste[i].uebung + ": " + ergebnis.fehler };
+    }
+    geprueft.push(ergebnis.einheit);
+  }
+  const daten = ladeEinheitenDaten();
+  for (let j = 0; j < geprueft.length; j++) {
+    daten.einheiten.push({
+      id: daten.naechsteId,                 // eindeutige ID
+      muskelgruppe: geprueft[j].muskelgruppe,
+      uebung: geprueft[j].uebung,
+      gewicht: geprueft[j].gewicht,
+      wiederholungen: geprueft[j].wiederholungen,
+      saetze: geprueft[j].saetze,
+      datum: geprueft[j].datum
+    });
+    daten.naechsteId = daten.naechsteId + 1;
+  }
+  if (!speichereWert(SCHLUESSEL.einheiten, daten)) {
+    return { ok: false, fehler: FEHLER_GESPERRT };
+  }
+  return { ok: true, anzahl: geprueft.length };
+}
+
+function loescheTrainingseinheit(id) {
+  const daten = ladeEinheitenDaten();
+  const uebrig = [];
+  for (let i = 0; i < daten.einheiten.length; i++) {
+    if (daten.einheiten[i].id !== id) uebrig.push(daten.einheiten[i]);
+  }
+  daten.einheiten = uebrig;
+  return speichereWert(SCHLUESSEL.einheiten, daten);
+}
+
+// ----- Status aller Muskelgruppen (jede unabhängig berechnet) -----
+function einheitenDerGruppe(alle, gruppe) {
+  const liste = [];
+  for (let i = 0; i < alle.length; i++) {
+    if (alle[i].muskelgruppe === gruppe) liste.push(alle[i]);
+  }
+  return liste;
+}
+
+function berechneAlleStatus() {
+  const alle = holeAlleEinheiten();
+  const gewicht = holeKoerpergewicht();
+  const heute = heutigesDatum();
+  const ergebnis = {};
+  for (let i = 0; i < MUSKELGRUPPEN.length; i++) {
+    const g = MUSKELGRUPPEN[i];
+    ergebnis[g] = berechneMuskelgruppe(einheitenDerGruppe(alle, g), gewicht, heute);
+  }
+  return ergebnis;
+}
+
+// Score-Verlauf einer Muskelgruppe: Score an jedem Trainingstag (+ heute)
+function berechneScoreVerlauf(gruppe) {
+  const alle = holeAlleEinheiten();
+  const liste = sortiereChronologisch(einheitenDerGruppe(alle, gruppe));
+  const gewicht = holeKoerpergewicht();
+  const heute = heutigesDatum();
+  const verlauf = [];
+  let letztesDatum = "";
+  for (let i = 0; i < liste.length; i++) {
+    const tag = liste[i].datum;
+    if (tag === letztesDatum) continue;       // jeden Tag nur einmal
+    letztesDatum = tag;
+    const bisher = [];
+    for (let j = 0; j < liste.length; j++) {
+      if (liste[j].datum <= tag) bisher.push(liste[j]);
+    }
+    verlauf.push({ datum: tag, score: berechneMuskelgruppe(bisher, gewicht, tag).score });
+  }
+  if (liste.length > 0 && letztesDatum !== heute) {
+    verlauf.push({ datum: heute, score: berechneMuskelgruppe(liste, gewicht, heute).score });
+  }
+  return verlauf;
+}
+
+// Trainingseinheiten für die Anzeige: Einträge mit gleichem Datum und gleicher Muskelgruppe gehören zusammen
+function gruppiereEinheiten(alle) {
+  const sortiert = sortiereChronologisch(alle).reverse();    // neueste zuerst
+  const gruppen = [];
+  const index = {};
+  for (let i = 0; i < sortiert.length; i++) {
+    const e = sortiert[i];
+    const schluessel = e.datum + "|" + e.muskelgruppe;
+    if (index[schluessel] === undefined) {
+      index[schluessel] = gruppen.length;
+      gruppen.push({ datum: e.datum, muskelgruppe: e.muskelgruppe, eintraege: [] });
+    }
+    gruppen[index[schluessel]].eintraege.push(e);
+  }
+  return gruppen;
+}
+
+// Einstellungen und persönliche Angaben
+function holeEinstellungen() {
+  const e = ladeWert(SCHLUESSEL.einstellungen, {});
+  return {
+    koerper: (e.koerper === "frau") ? "frau" : "mann",
+    trainingsziel: findeSchluessel(trainingsziele, e.trainingsziel) || "Muskelaufbau"
+  };
+}
+function holeAngaben() {
+  const a = ladeWert(SCHLUESSEL.angaben, {});
+  return { name: a.name || "", alter: a.alter || "", groesse: a.groesse || "" };
+}
+
+
+/* ======================================================================
+   ABSCHNITT E: Zustand der Oberfläche
+   Alles, was die Oberfläche "weiß", steht in diesem einen Objekt.
+   ====================================================================== */
+const zustand = {
+  seite: "koerper",         // aktuell angezeigter Bereich
+  ansicht: "vorne",         // "vorne" oder "hinten" (Smartphone)
+  geschlecht: "mann",       // "mann" oder "frau"
+  auswahl: null,            // angeklickte Muskelgruppe (am Anfang: keine)
+  profilOffen: false,       // ist das Muskelprofil als Vollbild geöffnet?
+  training: { schritt: 0, gruppe: null, gewaehlt: [], eingaben: {}, datum: "", fehler: [] },
+  statistik: { zeitraum: 30, gruppe: null },
+  ernaehrung: null          // letztes Ergebnis der Ernährungsberechnung
+};
+
+
+/* ======================================================================
+   ABSCHNITT F: Körperansicht (Zeichnung als SVG)
+   Es wird nur die linke Körperhälfte beschrieben und für die rechte Hälfte
+   gespiegelt. Jede Muskelgruppe ist ein klickbares Element.
+   ====================================================================== */
+
+// Umriss des Oberkörpers (linke Hälfte)
+const TORSO_MANN = "M100,60 L80,63 L57,70 L53,96 L64,140 L71,170 L68,204 L100,210 Z";
+const TORSO_FRAU = "M100,60 L84,64 L62,70 L61,96 L73,138 L79,160 L71,186 L63,206 L100,212 Z";
+
+// Kleine Bausteine zum Zeichnen
+function formPfad(d) {
+  return '<path class="form" d="' + d + '"/>';
+}
+function formEllipse(cx, cy, rx, ry, drehung) {
+  const dreh = drehung ? ' transform="rotate(' + drehung + ' ' + cx + ' ' + cy + ')"' : "";
+  return '<ellipse class="form" cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry + '"' + dreh + '/>';
+}
+// Linke Hälfte + gespiegelte rechte Hälfte
+function beideSeiten(markup) {
+  return markup + '<g transform="matrix(-1 0 0 1 200 0)">' + markup + '</g>';
+}
+// Streckt/staucht eine Körperregion waagerecht (für die Frauen-Ansicht)
+function skaliere(faktor) {
+  if (faktor === 1) return "";
+  return ' transform="translate(100 0) scale(' + faktor + ' 1) translate(-100 0)"';
+}
+
+// Die elf Muskelgruppen mit ihrer Form:
+// [Name, Körperbereich, Form, Position des Score-Labels (x, y)]
+const MUSKEL_FORMEN = {
+  vorne: [
+    ["Brust", "oben", formPfad("M100,67 L83,67 C70,69 64,80 65,95 C67,108 84,114 100,111 Z"), 100, 89],
+    ["Bauch", "mitte", formPfad("M100,115 L87,116 C84,136 85,160 91,181 L100,188 Z"), 100, 150],
+    ["Nacken", "oben", formPfad("M100,45 L92,45 L90,58 L79,65 L100,69 Z"), 100, 58],
+    ["Schultern", "oben", formEllipse(58, 78, 10, 11, 0), 58, 78],
+    ["Bizeps", "oben", formEllipse(48, 110, 7.5, 22, 7.85), 47, 110],
+    ["Oberschenkel", "unten", formEllipse(80, 249, 13, 37, 2.7), 80, 249],
+    ["Beine", "unten", formEllipse(77, 342, 8.5, 36, 1.1), 77, 342]
+  ],
+  hinten: [
+    ["Rücken", "oben", formPfad("M100,76 L77,67 C68,73 63,92 65,112 C69,140 84,165 100,172 Z"), 100, 118],
+    ["Nacken", "oben", formPfad("M100,45 L92,45 L89,58 L77,66 L100,74 Z"), 100, 58],
+    ["Schultern", "oben", formEllipse(58, 78, 10, 11, 0), 58, 78],
+    ["Trizeps", "oben", formEllipse(48, 110, 7.5, 22, 7.85), 47, 110],
+    ["Gesäß", "unten", formEllipse(86, 203, 15, 15, 0), 100, 203],
+    ["Oberschenkel", "unten", formEllipse(80, 252, 12.5, 31, 2.7), 80, 252],
+    ["Beine", "unten", formEllipse(69.5, 252, 4.5, 36, 0), 70, 252],
+    ["Waden", "unten", formEllipse(77, 326, 9.5, 23, 0.8), 77, 326]
+  ]
+};
+
+// Zeichnet eine Körperseite als SVG-Text
+function koerperSvg(seite, geschlecht, alleStatus, auswahl) {
+  const frau = (geschlecht === "frau");
+  const faktoren = {
+    oben: frau ? 0.86 : 1,
+    mitte: frau ? 0.88 : 1,
+    unten: frau ? 1.06 : 1
+  };
+
+  // 1. Silhouette (graue Körperform)
+  const arm = '<line x1="52" y1="78" x2="44" y2="136" stroke-width="18" stroke-linecap="round"/>' +
+              '<line x1="44" y1="136" x2="35" y2="194" stroke-width="14" stroke-linecap="round"/>' +
+              '<ellipse cx="33" cy="204" rx="6.5" ry="9"/>';
+  const bein = '<line x1="82" y1="206" x2="78" y2="290" stroke-width="30" stroke-linecap="round"/>' +
+               '<line x1="78" y1="290" x2="76" y2="390" stroke-width="21" stroke-linecap="round"/>' +
+               '<ellipse cx="73" cy="402" rx="11" ry="7"/>';
+  const halsBreite = frau ? 12 : 16;
+
+  let svg = '<svg viewBox="0 0 200 420" role="group" aria-label="' +
+            (seite === "vorne" ? "Vorderansicht" : "Rückansicht") + ' des Körpers">';
+  svg += '<g class="koerper-form">';
+  svg += '<ellipse cx="100" cy="27" rx="13.5" ry="17"/>';
+  svg += '<rect x="' + (100 - halsBreite / 2) + '" y="40" width="' + halsBreite + '" height="26" rx="5"/>';
+  svg += beideSeiten('<path d="' + (frau ? TORSO_FRAU : TORSO_MANN) + '"/>');
+  svg += '<g' + skaliere(faktoren.oben) + '>' + beideSeiten(arm) + '</g>';
+  svg += '<g' + skaliere(faktoren.unten) + '>' + beideSeiten(bein) + '</g>';
+  svg += '</g>';
+
+  // 2. Muskelgruppen (die ausgewählte wird zuletzt gezeichnet, damit ihr Rand vorn liegt)
+  const formen = MUSKEL_FORMEN[seite].slice();
+  formen.sort(function (a, b) {
+    return (a[0] === auswahl ? 1 : 0) - (b[0] === auswahl ? 1 : 0);
+  });
+
+  let label = "";
+  for (let i = 0; i < formen.length; i++) {
+    const name = formen[i][0];
+    const faktor = faktoren[formen[i][1]];
+    const st = alleStatus[name];
+    const klassen = "muskel " + STATUS_KLASSE[st.status] + (name === auswahl ? " ausgewaehlt" : "");
+    svg += '<g class="' + klassen + '" data-gruppe="' + name + '" tabindex="0" role="button" ' +
+           'aria-label="' + name + ': ' + st.score + ' von 100 Punkten, Status ' + st.status + '">' +
+           '<g' + skaliere(faktor) + '>' + beideSeiten(formen[i][2]) + '</g></g>';
+
+    // Score-Label nur bei der ausgewählten Muskelgruppe, z. B. 72/100
+    if (name === auswahl) {
+      const lx = 100 - (100 - formen[i][3]) * faktor;
+      label = '<g class="score-label" transform="translate(' + lx + ' ' + formen[i][4] + ')" pointer-events="none">' +
+              '<rect x="-24" y="-9.5" width="48" height="19" rx="9.5"/>' +
+              '<text y="3.8" text-anchor="middle">' + st.score + '/100</text></g>';
+    }
+  }
+  svg += label + '</svg>';
+  return svg;
+}
+
+// Zeichnet beide Körperseiten neu (z. B. nach einem Klick oder neuem Training)
+function renderFiguren() {
+  const alleStatus = berechneAlleStatus();
+  const seiten = ["vorne", "hinten"];
+  const titel = { vorne: "Vorderseite", hinten: "Rückseite" };
+  let html = "";
+  for (let i = 0; i < seiten.length; i++) {
+    const s = seiten[i];
+    html += '<div class="figur' + (zustand.ansicht === s ? " aktiv" : "") + '">' +
+            '<div class="figur-titel">' + titel[s] + '</div>' +
+            koerperSvg(s, zustand.geschlecht, alleStatus, zustand.auswahl) + '</div>';
+  }
+  $("figuren").innerHTML = html;
+
+  // Umschalter und Punkte-Anzeige aktualisieren
+  markiereAktiv("#schalter-geschlecht button", zustand.geschlecht);
+  markiereAktiv("#schalter-seite button", zustand.ansicht);
+  const punkte = document.querySelectorAll("#punkte i");
+  punkte[0].classList.toggle("aktiv", zustand.ansicht === "vorne");
+  punkte[1].classList.toggle("aktiv", zustand.ansicht === "hinten");
+}
+
+function markiereAktiv(auswahl, wert) {
+  const knoepfe = document.querySelectorAll(auswahl);
+  for (let i = 0; i < knoepfe.length; i++) {
+    knoepfe[i].classList.toggle("aktiv", knoepfe[i].dataset.wert === wert);
+  }
+}
+
+// Muskelgruppe wurde angeklickt
+function klickMuskel(name) {
+  zustand.auswahl = name;
+  renderFiguren();                       // Farbrand + Score im Körperbild
+  const grossBildschirm = window.matchMedia("(min-width: 1000px)").matches;
+  if (grossBildschirm) {
+    renderProfil();                      // Profil erscheint neben dem Körper
+  } else {
+    // Kurz warten, damit man die Hervorhebung noch sieht, dann Vollbild öffnen
+    setTimeout(function () {
+      if (zustand.auswahl === name) {
+        zustand.profilOffen = true;
+        renderProfil();
+        $("profil-bereich").scrollTop = 0;
+      }
+    }, 300);
+  }
+}
+
+// Zurück-Pfeil: Körperseite bleibt, die Auswahl wird zurückgesetzt
+function schliesseProfil() {
+  zustand.profilOffen = false;
+  zustand.auswahl = null;
+  renderFiguren();
+  renderProfil();
+}
+
+
+/* ======================================================================
+   ABSCHNITT G: Muskelprofil
+   ====================================================================== */
+
+const PFEIL_ZURUECK = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" ' +
+                      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
+
+const HANTEL_ICON = '<svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" ' +
+                    'stroke-width="1.6" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>';
+
+// Ring mit Score in der Mitte
+function scoreRing(score, klasse) {
+  const umfang = 2 * Math.PI * 42;
+  const gefuellt = umfang * score / 100;
+  return '<svg class="ring ' + klasse + '" viewBox="0 0 110 110" role="img" aria-label="Score ' + score + ' von 100">' +
+         '<circle cx="55" cy="55" r="42" fill="none" stroke="#edf1ee" stroke-width="11"/>' +
+         '<circle cx="55" cy="55" r="42" fill="none" stroke="' + (score > 0 ? "var(--farbe)" : "#edf1ee") + '" stroke-width="11" ' +
+         'stroke-linecap="round" stroke-dasharray="' + gefuellt + ' ' + umfang + '" transform="rotate(-90 55 55)"/>' +
+         '<text x="55" y="56" font-size="28" font-weight="700">' + score + '</text>' +
+         '<text x="55" y="74" font-size="12" style="fill:#68766e">von 100</text></svg>';
+}
+
+// Eine Zeile mit Beschriftung, Wert und Punktebalken
+function kennzeile(titel, text, punkte, maximum) {
+  const prozent = Math.round(punkte / maximum * 100);
+  return '<div class="zeile"><div class="zeile-kopf"><b>' + titel + '</b><span>' + zahl(punkte) + ' / ' + maximum + ' Punkte</span></div>' +
+         '<div class="klein-text">' + text + '</div>' +
+         '<div class="balken"><i style="width:' + prozent + '%"></i></div></div>';
+}
+
+// Prozentuale Veränderung als Text
+function veraenderungText(aktuell, vorher) {
+  if (vorher === null) return "–";
+  if (vorher === 0) return aktuell === 0 ? "0 %" : "neu";
+  const prozent = (aktuell - vorher) / vorher * 100;
+  return (prozent > 0 ? "+" : "") + zahl(prozent, 1) + " %";
+}
+
+// Liniendiagramm als SVG
+function liniendiagramm(verlauf) {
+  const B = 320, H = 170, links = 34, rechts = 14, oben = 16, unten = 28;
+  const innenB = B - links - rechts;
+  const innenH = H - oben - unten;
+  function px(i) {
+    return verlauf.length === 1 ? links + innenB / 2 : links + innenB * i / (verlauf.length - 1);
+  }
+  function py(score) {
+    return oben + innenH * (1 - score / 100);
+  }
+
+  let svg = '<svg viewBox="0 0 ' + B + ' ' + H + '" role="img" aria-label="Liniendiagramm: Entwicklung des Scores">';
+  const gitter = [0, 50, 100];
+  for (let g = 0; g < gitter.length; g++) {
+    svg += '<line class="achse" x1="' + links + '" x2="' + (B - rechts) + '" y1="' + py(gitter[g]) + '" y2="' + py(gitter[g]) + '"/>' +
+           '<text x="' + (links - 6) + '" y="' + (py(gitter[g]) + 4) + '" text-anchor="end">' + gitter[g] + '</text>';
+  }
+  if (verlauf.length > 1) {
+    let punkteText = "";
+    for (let i = 0; i < verlauf.length; i++) {
+      punkteText += px(i) + "," + py(verlauf[i].score) + " ";
+    }
+    svg += '<polyline class="linie" points="' + punkteText + '"/>';
+  }
+  for (let i = 0; i < verlauf.length; i++) {
+    const letzter = (i === verlauf.length - 1);
+    svg += '<circle class="punkt' + (letzter ? " letzter" : "") + '" cx="' + px(i) + '" cy="' + py(verlauf[i].score) + '" r="4.5"/>';
+    if (verlauf.length <= 8) {
+      svg += '<text class="wert" x="' + px(i) + '" y="' + (py(verlauf[i].score) - 9) + '" text-anchor="middle">' + verlauf[i].score + '</text>';
+    }
+    // Datum unter der Achse (bei vielen Punkten nur erster und letzter)
+    if (verlauf.length <= 6 || i === 0 || letzter) {
+      svg += '<text x="' + px(i) + '" y="' + (H - 8) + '" text-anchor="middle">' + kurzDatum(verlauf[i].datum) + '</text>';
+    }
+  }
+  return svg + '</svg>';
+}
+
+// Drei Übungsempfehlungen (mit der bestehenden Funktion waehleUebungen)
+function empfehlungenHtml(gruppe, statusName) {
+  const ziel = holeEinstellungen().trainingsziel;
+  // "Inactive" kennt waehleUebungen nicht -> wie vereinbart als "Starter" übergeben
+  const statusFuerAlgorithmus = (statusName === "Inactive") ? "Starter" : statusName;
+  const e = waehleUebungen(gruppe, ziel, statusFuerAlgorithmus);
+  if (!e.ok) {
+    return '<div class="hinweis fehler">' + esc(e.fehler) + '</div>';
+  }
+  let html = '<div class="karte"><h3>Übungsempfehlungen</h3>' +
+             '<p class="klein-text" style="margin-bottom:12px">Für dein Ziel „' + esc(e.trainingsziel) + '“ · Status ' + esc(statusName) + '</p>' +
+             '<div class="uebungs-karten">';
+  for (let i = 0; i < e.uebungen.length; i++) {
+    const u = e.uebungen[i];
+    html += '<div class="uebung-karte"><div class="uebung-bild">' + HANTEL_ICON + '<span>Abbildung folgt</span></div>' +
+            '<div class="uebung-inhalt"><b>' + esc(u.name) + '</b>' +
+            '<span class="etikett">' + esc(gruppe) + '</span>' +
+            '<p style="font-size:14px;font-weight:600">' + u.saetze + ' Sätze × ' + esc(u.wiederholungen) + ' Wdh.</p>' +
+            '<p class="klein-text" style="margin-top:4px">' + esc(u.beschreibung) + '</p></div></div>';
+  }
+  html += '</div>';
+  if (e.hinweis) {
+    html += '<div class="hinweis warnung" style="margin-top:12px">' + esc(e.hinweis) + '</div>';
+  }
+  return html + '</div>';
+}
+
+// Baut das komplette Muskelprofil auf
+function renderProfil() {
+  const box = $("profil-bereich");
+  box.classList.toggle("offen", zustand.profilOffen && zustand.auswahl !== null);
+
+  if (zustand.auswahl === null) {
+    box.innerHTML = '<div class="platzhalter">Tippe auf eine Muskelgruppe, um das ausführliche Muskelprofil zu sehen.</div>';
+    return;
+  }
+
+  const gruppe = zustand.auswahl;
+  const alle = holeAlleEinheiten();
+  const liste = einheitenDerGruppe(alle, gruppe);
+  const gewicht = holeKoerpergewicht();
+  const heute = heutigesDatum();
+  const erg = berechneMuskelgruppe(liste, gewicht, heute);
+  const klasse = STATUS_KLASSE[erg.status];
+
+  // Kopf: Zurück-Pfeil + Überschrift (nur der Name der Muskelgruppe)
+  let html = '<div class="profil-kopf"><button type="button" class="zurueck" data-aktion="profil-zurueck" ' +
+             'aria-label="Zurück zur Körperansicht">' + PFEIL_ZURUECK + '</button><h2>' + esc(gruppe) + '</h2></div>';
+
+  // Score und Status
+  html += '<div class="score-kopf ' + klasse + '">' + scoreRing(erg.score, klasse) +
+          '<div><div class="klein-text">Aktueller Trainings-Score</div>' +
+          '<div style="font-size:24px;font-weight:700;margin:2px 0 6px">' + erg.score + ' / 100</div>' +
+          '<span class="status-pille ' + klasse + '"><i></i>' + esc(erg.status) + '</span></div></div>';
+
+  if (liste.length === 0) {
+    html += '<div class="karte"><p style="font-weight:700">Noch keine Daten</p>' +
+            '<p class="klein-text" style="margin:4px 0 12px">Für diese Muskelgruppe wurde noch kein Training gespeichert.</p>' +
+            '<button type="button" class="knopf primaer breit" data-aktion="erstes-training">Erstes Training hinzufügen</button></div>';
+  } else {
+    // Einzelne Bereiche des Scores
+    const t = erg.teilpunkte;
+    const tage = zaehleTrainingstage(liste, heute);
+    const analyse = analysiereEntwicklung(liste);
+    let relativText;
+    if (gewicht === null) {
+      relativText = 'Körpergewicht fehlt (bitte unter „Ernährung“ oder „Mehr“ eintragen)';
+    } else {
+      relativText = zahl(hoechsterWert(liste, "gewicht") / gewicht, 2) + ' (höchstes Gewicht ' +
+                    zahl(hoechsterWert(liste, "gewicht")) + ' kg ÷ Körpergewicht ' + zahl(gewicht) + ' kg)';
+    }
+    html += '<div class="karte"><h3>Details zum Score</h3>' +
+            kennzeile("Trainingshäufigkeit", tage + ' von 12 Trainingstagen in den letzten 30 Tagen', t.haeufigkeit, 20) +
+            kennzeile("Relative Trainingsleistung", relativText, t.relativeLeistung, 20) +
+            kennzeile("Wiederholungen", 'Höchstwert: ' + hoechsterWert(liste, "wiederholungen") + ' pro Satz', t.wiederholungen, 15) +
+            kennzeile("Sätze", 'Höchstwert: ' + hoechsterWert(liste, "saetze") + ' Sätze', t.saetze, 15) +
+            kennzeile("Entwicklung über die Zeit", analyse.verbesserungen + ' Verbesserungen bei ' + analyse.vergleiche + ' Vergleichen', t.entwicklung, 30) +
+            '</div>';
+
+    // Entwicklung: Liniendiagramm + Vergleich
+    const verlauf = berechneScoreVerlauf(gruppe);
+    const aktuell = verlauf[verlauf.length - 1].score;
+    const vorher = verlauf.length > 1 ? verlauf[verlauf.length - 2].score : null;
+    html += '<div class="karte"><h3>Entwicklung über die Zeit</h3><div class="diagramm">' + liniendiagramm(verlauf) + '</div>' +
+            '<div class="raster" style="margin-top:12px">' +
+            '<div class="kennzahl"><b>' + aktuell + '</b><span>Aktueller Score</span></div>' +
+            '<div class="kennzahl"><b>' + (vorher === null ? "–" : vorher) + '</b><span>Vorheriger Score</span></div>' +
+            '<div class="kennzahl"><b>' + veraenderungText(aktuell, vorher) + '</b><span>Veränderung</span></div></div>' +
+            (vorher === null ? '<p class="klein-text" style="margin-top:10px">Ein Vergleich ist möglich, sobald es mehr als einen Messpunkt gibt.</p>' : '') +
+            '</div>';
+  }
+
+  html += empfehlungenHtml(gruppe, erg.status);
+  box.innerHTML = html;
+}
+
+
+/* ======================================================================
+   ABSCHNITT H: Training (Übersicht und Schritt-für-Schritt-Erfassung)
+   ====================================================================== */
+
+function neuesTraining() {
+  return { schritt: 0, gruppe: null, gewaehlt: [], eingaben: {}, datum: heutigesDatum(), fehler: [] };
+}
+
+function speicherWarnungHtml() {
+  if (speicherFunktioniert) return "";
+  return '<div class="hinweis warnung" style="margin-bottom:14px">Dein Browser erlaubt hier kein dauerhaftes Speichern. ' +
+         'Die Daten bleiben nur bis zum Schließen dieser Seite erhalten.</div>';
+}
+
+// Übersicht: Trainingshäufigkeit, "Training starten", zuletzt absolvierte Einheiten
+function trainingUebersichtHtml() {
+  const alle = holeAlleEinheiten();
+  const tage = zaehleTrainingstage(alle, heutigesDatum());
+  const prozent = Math.min(tage / ZIEL_TRAININGSTAGE, 1) * 100;
+  const gruppen = gruppiereEinheiten(alle).slice(0, 8);
+
+  let html = speicherWarnungHtml();
+  html += '<div class="karte"><h2>Trainingshäufigkeit</h2>' +
+          '<div class="raster"><div class="kennzahl"><b>' + tage + '</b><span>Trainingstage in den letzten 30 Tagen</span></div>' +
+          '<div class="kennzahl"><b>' + gruppiereEinheiten(alle).length + '</b><span>Trainingseinheiten insgesamt</span></div></div>' +
+          '<div class="balken" style="margin-top:12px"><i style="width:' + prozent + '%"></i></div>' +
+          '<p class="klein-text" style="margin-top:6px">Für die volle Punktzahl bei der Häufigkeit zählen ' + ZIEL_TRAININGSTAGE + ' Trainingstage in 30 Tagen.</p>' +
+          '<button type="button" class="knopf primaer breit" style="margin-top:14px" data-aktion="training-starten">Training starten</button></div>';
+
+  html += '<div class="karte"><h2>Zuletzt absolviert</h2>';
+  if (gruppen.length === 0) {
+    html += '<div class="platzhalter">Noch keine Trainingseinheiten.<br>Tippe auf „Training starten“, um deine erste Einheit zu erfassen.</div>';
+  } else {
+    for (let i = 0; i < gruppen.length; i++) {
+      const g = gruppen[i];
+      const ids = [];
+      let zeilen = "";
+      for (let j = 0; j < g.eintraege.length; j++) {
+        const e = g.eintraege[j];
+        ids.push(e.id);
+        zeilen += '<div class="klein-text">' + esc(e.uebung) + ' · ' + e.saetze + ' × ' + e.wiederholungen + ' · ' + zahl(e.gewicht) + ' kg</div>';
+      }
+      html += '<div class="liste-eintrag"><div><b>' + esc(g.muskelgruppe) + '</b>' +
+              '<div class="klein-text">' + esc(formatDatum(g.datum)) + '</div>' + zeilen + '</div>' +
+              '<button type="button" class="knopf klein gefahr" data-aktion="einheit-loeschen" data-wert="' + ids.join(",") + '">Löschen</button></div>';
+    }
+  }
+  return html + '</div>';
+}
+
+// Beschreibung einer Katalogübung (oder null bei eigenen Übungen)
+function katalogBeschreibung(gruppe, name) {
+  for (let i = 0; i < uebungskatalog[gruppe].length; i++) {
+    if (uebungskatalog[gruppe][i].name === name) return uebungskatalog[gruppe][i].beschreibung;
+  }
+  return null;
+}
+
+function fehlerListeHtml(fehler) {
+  if (fehler.length === 0) return "";
+  let html = '<div class="hinweis fehler" style="margin-top:12px"><ul class="fehlerliste">';
+  for (let i = 0; i < fehler.length; i++) html += '<li>' + esc(fehler[i]) + '</li>';
+  return html + '</ul></div>';
+}
+
+// Die vier Schritte der Erfassung
+function wizardHtml() {
+  const t = zustand.training;
+  const titel = ["", "Muskelgruppe auswählen", "Übungen hinzufügen", "Details eingeben", "Training speichern"];
+
+  let html = '<div class="karte"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">' +
+             '<h2 style="margin:0">Neues Training</h2>' +
+             '<button type="button" class="knopf klein" data-aktion="training-abbrechen">Abbrechen</button></div>';
+  html += '<div class="schritte" aria-hidden="true">';
+  for (let s = 1; s <= 4; s++) {
+    html += '<i class="' + (s < t.schritt ? "fertig" : (s === t.schritt ? "aktiv" : "")) + '"></i>';
+  }
+  html += '</div><p class="untertitel" style="margin-bottom:12px">Schritt ' + t.schritt + ' von 4: ' + titel[t.schritt] + '</p>';
+
+  // ---- Schritt 1: Muskelgruppe ----
+  if (t.schritt === 1) {
+    const status = berechneAlleStatus();
+    html += '<div class="gruppen-raster">';
+    for (let i = 0; i < MUSKELGRUPPEN.length; i++) {
+      const g = MUSKELGRUPPEN[i];
+      html += '<button type="button" class="gruppen-knopf ' + STATUS_KLASSE[status[g].status] + (t.gruppe === g ? " gewaehlt" : "") +
+              '" data-aktion="gruppe-waehlen" data-wert="' + esc(g) + '"><i></i>' + esc(g) + '</button>';
+    }
+    html += '</div>';
+  }
+
+  // ---- Schritt 2: Übungen ----
+  if (t.schritt === 2) {
+    const namen = holeUebungsnamen(t.gruppe);
+    const eigene = holeEigeneUebungen(t.gruppe);
+    html += '<h3>Übungen für ' + esc(t.gruppe) + '</h3>';
+    for (let i = 0; i < namen.length; i++) {
+      const name = namen[i];
+      const gewaehlt = t.gewaehlt.indexOf(name) !== -1;
+      const beschreibung = katalogBeschreibung(t.gruppe, name);
+      const istEigene = eigene.indexOf(name) !== -1;
+      html += '<div class="wahl-eintrag' + (gewaehlt ? " gewaehlt" : "") + '"><div><b>' + esc(name) + '</b>' +
+              '<div class="klein-text">' + (beschreibung ? esc(beschreibung) : 'Eigene Übung') + '</div></div>' +
+              '<div style="display:flex;gap:6px;flex:none">' +
+              (istEigene ? '<button type="button" class="knopf klein gefahr" data-aktion="eigene-loeschen" data-wert="' + esc(name) + '" aria-label="Eigene Übung löschen">✕</button>' : '') +
+              '<button type="button" class="knopf klein' + (gewaehlt ? "" : " primaer") + '" data-aktion="uebung-toggle" data-wert="' + esc(name) + '">' +
+              (gewaehlt ? "Entfernen" : "Hinzufügen") + '</button></div></div>';
+    }
+    html += '<h3 style="margin-top:16px">Eigene Übung erstellen</h3>' +
+            '<label class="feld"><span>Name der Übung</span><input type="text" id="eigene-uebung" maxlength="40" placeholder="z. B. Kabelzug-Fly"></label>' +
+            '<button type="button" class="knopf breit" data-aktion="eigene-anlegen">Speichern und hinzufügen</button>';
+  }
+
+  // ---- Schritt 3: Sätze, Wiederholungen, Gewicht ----
+  if (t.schritt === 3) {
+    for (let i = 0; i < t.gewaehlt.length; i++) {
+      const name = t.gewaehlt[i];
+      const e = t.eingaben[name] || {};
+      html += '<div class="wahl-eintrag" style="display:block"><b>' + esc(name) + '</b><div class="feld-reihe" style="margin-top:8px">' +
+              '<label class="feld" style="margin:0"><span>Sätze</span><input type="number" inputmode="numeric" min="1" step="1" data-feld="saetze" data-uebung="' + esc(name) + '" value="' + esc(e.saetze || "") + '"></label>' +
+              '<label class="feld" style="margin:0"><span>Wiederholungen</span><input type="number" inputmode="numeric" min="1" step="1" data-feld="wiederholungen" data-uebung="' + esc(name) + '" value="' + esc(e.wiederholungen || "") + '"></label>' +
+              '<label class="feld" style="margin:0"><span>Gewicht (kg)</span><input type="number" inputmode="decimal" min="0" step="0.5" data-feld="gewicht" data-uebung="' + esc(name) + '" value="' + esc(e.gewicht || "") + '"></label>' +
+              '</div></div>';
+    }
+    html += '<label class="feld" style="margin-top:12px"><span>Datum</span><input type="date" data-feld="datum" max="' + heutigesDatum() + '" value="' + esc(t.datum) + '"></label>' +
+            '<p class="klein-text">Gewicht 0 ist erlaubt, z. B. bei Liegestützen oder Plank.</p>';
+  }
+
+  // ---- Schritt 4: Zusammenfassung ----
+  if (t.schritt === 4) {
+    html += '<div class="hinweis"><b>' + esc(t.gruppe) + '</b> · ' + esc(formatDatum(t.datum)) + '</div><div style="margin-top:10px">';
+    for (let i = 0; i < t.gewaehlt.length; i++) {
+      const name = t.gewaehlt[i];
+      const e = t.eingaben[name];
+      html += '<div class="liste-eintrag"><div><b>' + esc(name) + '</b><div class="klein-text">' +
+              esc(e.saetze) + ' Sätze × ' + esc(e.wiederholungen) + ' Wiederholungen · ' + esc(e.gewicht) + ' kg</div></div></div>';
+    }
+    html += '</div>';
+  }
+
+  html += fehlerListeHtml(t.fehler);
+
+  // Knöpfe unten
+  html += '<div class="knopf-zeile">';
+  if (t.schritt > 1) html += '<button type="button" class="knopf" data-aktion="schritt-zurueck">Zurück</button>';
+  if (t.schritt < 4) {
+    html += '<button type="button" class="knopf primaer" data-aktion="schritt-weiter">Weiter</button>';
+  } else {
+    html += '<button type="button" class="knopf primaer" data-aktion="training-speichern">Training speichern</button>';
+  }
+  return html + '</div></div>';
+}
+
+function renderTraining() {
+  const t = zustand.training;
+  $("training-inhalt").innerHTML = (t.schritt === 0) ? trainingUebersichtHtml() : wizardHtml();
+}
+
+function startTraining(gruppe) {
+  zustand.training = neuesTraining();
+  if (gruppe) {
+    zustand.training.gruppe = gruppe;
+    zustand.training.schritt = 2;          // Muskelgruppe ist schon bekannt
+  } else {
+    zustand.training.schritt = 1;
+  }
+  renderTraining();
+}
+
+// "Weiter": Eingaben des aktuellen Schritts prüfen
+function schrittWeiter() {
+  const t = zustand.training;
+  t.fehler = [];
+  if (t.schritt === 1 && !t.gruppe) {
+    t.fehler.push("Bitte wähle eine Muskelgruppe aus.");
+  } else if (t.schritt === 2 && t.gewaehlt.length === 0) {
+    t.fehler.push("Bitte füge mindestens eine Übung hinzu.");
+  } else if (t.schritt === 3) {
+    for (let i = 0; i < t.gewaehlt.length; i++) {
+      const name = t.gewaehlt[i];
+      const e = t.eingaben[name] || {};
+      const ergebnis = pruefeEinheit({ muskelgruppe: t.gruppe, uebung: name, gewicht: e.gewicht,
+                                       wiederholungen: e.wiederholungen, saetze: e.saetze, datum: t.datum });
+      if (!ergebnis.ok) t.fehler.push(name + ": " + ergebnis.fehler);
+    }
+  }
+  if (t.fehler.length === 0) t.schritt = t.schritt + 1;
+  renderTraining();
+}
+
+function speichereTraining() {
+  const t = zustand.training;
+  const liste = [];
+  for (let i = 0; i < t.gewaehlt.length; i++) {
+    const name = t.gewaehlt[i];
+    const e = t.eingaben[name];
+    liste.push({ muskelgruppe: t.gruppe, uebung: name, gewicht: e.gewicht, wiederholungen: e.wiederholungen, saetze: e.saetze, datum: t.datum });
+  }
+  const ergebnis = fuegeTrainingseinheitenHinzu(liste);
+  if (!ergebnis.ok) {
+    t.fehler = [ergebnis.fehler];
+    renderTraining();
+    return;
+  }
+  // Zurück zur Übersicht; Scores, Farben und Statistiken werden neu berechnet
+  zustand.training = neuesTraining();
+  renderAlles();
+  zeigeToast("Training gespeichert. Scores wurden aktualisiert.");
+}
+
+
+/* ======================================================================
+   ABSCHNITT I: Statistiken
+   ====================================================================== */
+
+function renderStatistik() {
+  const box = $("statistik-inhalt");
+  const alle = holeAlleEinheiten();
+  if (alle.length === 0) {
+    box.innerHTML = '<div class="karte"><div class="platzhalter">Noch keine Daten.<br>Speichere dein erstes Training, um Statistiken zu sehen.</div>' +
+                    '<button type="button" class="knopf primaer breit" data-aktion="training-starten">Training starten</button></div>';
+    return;
+  }
+
+  const heute = heutigesDatum();
+  const zeitraum = zustand.statistik.zeitraum;                       // 7, 30, 90 oder 0 (alles)
+  const start = zeitraum > 0 ? datumVorTagen(heute, zeitraum - 1) : "0000-01-01";
+  const imZeitraum = [];
+  for (let i = 0; i < alle.length; i++) {
+    if (alle[i].datum >= start) imZeitraum.push(alle[i]);
+  }
+  const tageImZeitraum = zaehleVerschiedeneTage(imZeitraum);
+
+  // Zeitraum wählen
+  const optionen = [[7, "7 Tage"], [30, "30 Tage"], [90, "90 Tage"], [0, "Gesamt"]];
+  let html = '<div style="margin-bottom:14px"><div class="segment" role="group" aria-label="Zeitraum wählen">';
+  for (let i = 0; i < optionen.length; i++) {
+    html += '<button type="button" data-aktion="zeitraum" data-wert="' + optionen[i][0] + '"' +
+            (optionen[i][0] === zeitraum ? ' class="aktiv"' : '') + '>' + optionen[i][1] + '</button>';
+  }
+  html += '</div></div>';
+
+  // Kennzahlen
+  html += '<div class="karte"><h2>Überblick</h2><div class="raster">' +
+          '<div class="kennzahl"><b>' + gruppiereEinheiten(imZeitraum).length + '</b><span>Trainingseinheiten im Zeitraum</span></div>' +
+          '<div class="kennzahl"><b>' + tageImZeitraum + '</b><span>Trainingstage im Zeitraum</span></div>' +
+          '<div class="kennzahl"><b>' + imZeitraum.length + '</b><span>erfasste Übungen</span></div>' +
+          '<div class="kennzahl"><b>' + zaehleTrainingstage(alle, heute) + ' / ' + ZIEL_TRAININGSTAGE + '</b><span>Trainingshäufigkeit (30 Tage)</span></div>' +
+          '</div></div>';
+
+  // Scores aller Muskelgruppen und Fortschritt im Zeitraum
+  const status = berechneAlleStatus();
+  const gewicht = holeKoerpergewicht();
+  const vorTag = datumVorTagen(start, 1);
+  html += '<div class="karte"><h2>Scores der Muskelgruppen</h2>' +
+          (zeitraum > 0 ? '<p class="klein-text" style="margin-bottom:8px">Rechts: Veränderung seit Beginn des Zeitraums</p>' : '');
+  for (let i = 0; i < MUSKELGRUPPEN.length; i++) {
+    const g = MUSKELGRUPPEN[i];
+    const jetzt = status[g].score;
+    let aenderung = "–";
+    let aenderungKlasse = "";
+    if (zeitraum > 0 && jetzt > 0) {
+      const frueher = [];
+      const gruppenListe = einheitenDerGruppe(alle, g);
+      for (let j = 0; j < gruppenListe.length; j++) {
+        if (gruppenListe[j].datum <= vorTag) frueher.push(gruppenListe[j]);
+      }
+      const vorher = berechneMuskelgruppe(frueher, gewicht, vorTag).score;
+      const diff = jetzt - vorher;
+      aenderung = (diff > 0 ? "+" : "") + diff;
+      aenderungKlasse = diff > 0 ? "plus" : (diff < 0 ? "minus" : "");
+    }
+    html += '<div class="score-zeile ' + STATUS_KLASSE[status[g].status] + '"><span>' + esc(g) + '</span>' +
+            '<div class="score-balken"><i style="width:' + jetzt + '%"></i></div>' +
+            '<span class="score-wert">' + jetzt + ' <span class="' + aenderungKlasse + '">(' + aenderung + ')</span></span></div>';
+  }
+  html += '</div>';
+
+  // Entwicklung einer Muskelgruppe als Liniendiagramm
+  if (zustand.statistik.gruppe === null) {
+    for (let i = 0; i < MUSKELGRUPPEN.length; i++) {
+      if (einheitenDerGruppe(alle, MUSKELGRUPPEN[i]).length > 0) { zustand.statistik.gruppe = MUSKELGRUPPEN[i]; break; }
+    }
+  }
+  const gewaehlt = zustand.statistik.gruppe;
+  html += '<div class="karte"><h2>Entwicklung der Scores</h2><label class="feld"><span>Muskelgruppe</span><select data-feld="statistik-gruppe">';
+  for (let i = 0; i < MUSKELGRUPPEN.length; i++) {
+    html += '<option value="' + esc(MUSKELGRUPPEN[i]) + '"' + (MUSKELGRUPPEN[i] === gewaehlt ? " selected" : "") + '>' + esc(MUSKELGRUPPEN[i]) + '</option>';
+  }
+  html += '</select></label>';
+  const verlauf = [];
+  const voll = berechneScoreVerlauf(gewaehlt);
+  for (let i = 0; i < voll.length; i++) {
+    if (voll[i].datum >= start) verlauf.push(voll[i]);
+  }
+  if (verlauf.length === 0) {
+    html += '<div class="platzhalter">Noch keine Daten für ' + esc(gewaehlt) + ' im gewählten Zeitraum.</div>';
+  } else {
+    html += '<div class="diagramm">' + liniendiagramm(verlauf) + '</div>';
+  }
+  box.innerHTML = html + '</div>';
+}
+
+// Anzahl verschiedener Tage in einer Liste von Einheiten
+function zaehleVerschiedeneTage(einheiten) {
+  const gesehen = {};
+  let anzahl = 0;
+  for (let i = 0; i < einheiten.length; i++) {
+    if (!gesehen[einheiten[i].datum]) { gesehen[einheiten[i].datum] = true; anzahl++; }
+  }
+  return anzahl;
+}
+
+
+/* ======================================================================
+   ABSCHNITT J: Ernährung (nutzt die bestehende Funktion berechneErnaehrung)
+   ====================================================================== */
+
+const ZIEL_REIHENFOLGE = ["Abnehmen", "Muskelaufbau", "Zunehmen", "Gewicht halten"];
+
+function ergebnisHtml() {
+  const e = zustand.ernaehrung;
+  if (e === null) return "";
+  if (!e.ok) return '<div class="hinweis fehler" style="margin-top:14px">' + esc(e.fehler) + '</div>';
+  return '<div class="ergebnis-raster"><div class="ergebnis"><b>' + zahl(e.kalorien, 0) + ' kcal</b><span>Täglicher Kalorienbedarf</span></div>' +
+         '<div class="ergebnis"><b>' + zahl(e.protein, 0) + ' g</b><span>Täglicher Proteinbedarf</span></div></div>' +
+         '<p class="klein-text" style="margin-top:12px">Richtwerte nach einer vereinfachten Projektformel – keine individuelle medizinische Beratung.</p>';
+}
+
+function renderErnaehrung() {
+  const alle = holeAlleEinheiten();
+  const anzahlHeute = zaehleUebungenAmTag(alle, heutigesDatum());
+  const gewicht = holeKoerpergewicht();
+  const ziel = holeEinstellungen().trainingsziel;
+
+  let optionen = "";
+  for (let i = 0; i < ZIEL_REIHENFOLGE.length; i++) {
+    optionen += '<option' + (ZIEL_REIHENFOLGE[i] === ziel ? " selected" : "") + '>' + ZIEL_REIHENFOLGE[i] + '</option>';
+  }
+  const vorschlag = Math.min(anzahlHeute, 8);
+
+  $("ernaehrung-inhalt").innerHTML =
+    '<div class="karte"><h2>Kalorien- und Proteinbedarf</h2>' +
+    '<p class="untertitel">Berechne deinen täglichen Bedarf passend zu deinem Trainingsziel.</p>' +
+    '<label class="feld"><span>Körpergewicht (kg)</span><input type="number" inputmode="decimal" id="ern-gewicht" min="1" step="0.1" value="' + (gewicht === null ? "" : gewicht) + '" placeholder="z. B. 70"></label>' +
+    '<label class="feld"><span>Trainingsziel</span><select id="ern-ziel">' + optionen + '</select></label>' +
+    '<label class="feld"><span>Trainingsaktivität: Übungen heute (0–8)</span><input type="number" inputmode="numeric" id="ern-uebungen" min="0" max="8" step="1" value="' + vorschlag + '"></label>' +
+    '<p class="klein-text" style="margin:-4px 0 14px">Aus deinem heutigen Training übernommen: ' + anzahlHeute + ' Übung(en), Aktivität „' +
+    bestimmeAktivitaetslevel(anzahlHeute) + '“. Du kannst den Wert ändern.' + (anzahlHeute > 8 ? ' Mehr als 8 Übungen zählen wie 8.' : '') + '</p>' +
+    '<button type="button" class="knopf primaer breit" data-aktion="ernaehrung-berechnen">Berechnen</button>' +
+    '<div id="ern-ergebnis">' + ergebnisHtml() + '</div></div>';
+}
+
+function berechneErnaehrungAusFormular() {
+  const gewichtText = $("ern-gewicht").value.trim();
+  const uebungenText = $("ern-uebungen").value.trim();
+  const ziel = $("ern-ziel").value;
+  // Leere Felder werden als ungültig (NaN) übergeben, damit berechneErnaehrung die Fehlermeldung liefert
+  const ergebnis = berechneErnaehrung(gewichtText === "" ? NaN : Number(gewichtText),
+                                      uebungenText === "" ? NaN : Number(uebungenText), ziel);
+  zustand.ernaehrung = ergebnis;
+  if (ergebnis.ok) {
+    speichereKoerpergewicht(Number(gewichtText));       // Körpergewicht im Profil merken
+    const einst = ladeWert(SCHLUESSEL.einstellungen, {});
+    einst.trainingsziel = ziel;
+    speichereWert(SCHLUESSEL.einstellungen, einst);
+    renderFiguren();                                     // Gewicht beeinflusst die relative Leistung
+  }
+  $("ern-ergebnis").innerHTML = ergebnisHtml();
+}
+
+
+/* ======================================================================
+   ABSCHNITT K: Mehr (Profil, Angaben, Einstellungen, Info)
+   ====================================================================== */
+
+function renderMehr() {
+  const angaben = holeAngaben();
+  const einst = holeEinstellungen();
+  const gewicht = holeKoerpergewicht();
+  const initial = angaben.name ? angaben.name.trim().charAt(0).toUpperCase() : "M";
+
+  let zielOptionen = "";
+  for (let i = 0; i < ZIEL_REIHENFOLGE.length; i++) {
+    zielOptionen += '<option' + (ZIEL_REIHENFOLGE[i] === einst.trainingsziel ? " selected" : "") + '>' + ZIEL_REIHENFOLGE[i] + '</option>';
+  }
+
+  $("mehr-inhalt").innerHTML =
+    speicherWarnungHtml() +
+    '<div class="karte"><div class="profil-zeile"><div class="avatar">' + esc(initial) + '</div><div>' +
+    '<h2 style="margin:0">' + esc(angaben.name || "Dein Profil") + '</h2><p class="klein-text">Persönliches Profil</p></div></div></div>' +
+
+    '<div class="karte"><h2>Persönliche Angaben</h2>' +
+    '<label class="feld"><span>Name</span><input type="text" id="m-name" maxlength="40" value="' + esc(angaben.name) + '"></label>' +
+    '<div class="feld-reihe">' +
+    '<label class="feld"><span>Alter</span><input type="number" inputmode="numeric" id="m-alter" min="1" step="1" value="' + esc(angaben.alter) + '"></label>' +
+    '<label class="feld"><span>Größe (cm)</span><input type="number" inputmode="decimal" id="m-groesse" min="1" value="' + esc(angaben.groesse) + '"></label>' +
+    '<label class="feld"><span>Gewicht (kg)</span><input type="number" inputmode="decimal" id="m-gewicht" min="1" step="0.1" value="' + (gewicht === null ? "" : gewicht) + '"></label></div>' +
+    '<div id="m-meldung"></div>' +
+    '<button type="button" class="knopf primaer breit" data-aktion="angaben-speichern">Angaben speichern</button></div>' +
+
+    '<div class="karte"><h2>Einstellungen</h2>' +
+    '<label class="feld"><span>Standard-Körperansicht</span><select id="m-ansicht"><option value="mann"' + (einst.koerper === "mann" ? " selected" : "") +
+    '>Mann</option><option value="frau"' + (einst.koerper === "frau" ? " selected" : "") + '>Frau</option></select></label>' +
+    '<label class="feld"><span>Trainingsziel (für Übungsempfehlungen)</span><select id="m-ziel">' + zielOptionen + '</select></label>' +
+    '<button type="button" class="knopf primaer breit" data-aktion="einstellungen-speichern">Einstellungen speichern</button>' +
+    '<button type="button" class="knopf gefahr breit" style="margin-top:10px" data-aktion="daten-loeschen">Alle Daten löschen</button></div>' +
+
+    '<div class="karte"><h2>Über mamu</h2>' +
+    '<p style="margin-bottom:8px">mamu ist eine Fitness- und Ernährungsanwendung: Du dokumentierst dein Training, verfolgst deine Muskelgruppen auf der Körperansicht, ' +
+    'erhältst passende Übungen und berechnest deinen Kalorien- und Proteinbedarf.</p>' +
+    '<p class="klein-text">Die Statusstufen Starter, Rising, Advanced und Elite sind eine interne Bewertung von mamu und keine allgemeingültige sportliche Bewertung. ' +
+    'Trainings- und Ernährungswerte sind vereinfachte Projektvorgaben und keine individuell abgestimmten Pläne.</p>' +
+    '<p class="klein-text" style="margin-top:8px">Version: Prototyp 1.0 · Ein Projekt der FH Technikum Wien</p></div>';
+}
+
+function speichereAngaben() {
+  const name = $("m-name").value.trim();
+  const alter = $("m-alter").value.trim();
+  const groesse = $("m-groesse").value.trim();
+  const gewicht = $("m-gewicht").value.trim();
+  const fehler = [];
+  if (alter !== "" && (!Number.isInteger(Number(alter)) || Number(alter) <= 0)) fehler.push("Das Alter muss eine ganze Zahl größer als 0 sein.");
+  if (groesse !== "" && !(Number(groesse) > 0)) fehler.push("Die Größe muss eine Zahl größer als 0 sein.");
+  if (gewicht !== "" && !(Number(gewicht) > 0)) fehler.push("Das Gewicht muss eine Zahl größer als 0 sein.");
+  if (fehler.length > 0) {
+    $("m-meldung").innerHTML = fehlerListeHtml(fehler) + '<div style="height:12px"></div>';
+    return;
+  }
+  speichereWert(SCHLUESSEL.angaben, { name: name, alter: alter, groesse: groesse });
+  if (gewicht !== "") speichereKoerpergewicht(Number(gewicht));
+  renderAlles();
+  zeigeToast("Angaben gespeichert.");
+}
+
+function speichereEinstellungen() {
+  const einst = { koerper: $("m-ansicht").value, trainingsziel: $("m-ziel").value };
+  speichereWert(SCHLUESSEL.einstellungen, einst);
+  zustand.geschlecht = einst.koerper;
+  renderAlles();
+  zeigeToast("Einstellungen gespeichert.");
+}
+
+function loescheAlleDaten() {
+  if (!window.confirm("Wirklich alle Daten löschen? Das kann nicht rückgängig gemacht werden.")) return;
+  const schluessel = Object.keys(SCHLUESSEL);
+  for (let i = 0; i < schluessel.length; i++) {
+    const name = SCHLUESSEL[schluessel[i]];
+    delete gedaechtnis[name];
+    delete gesperrt[name];
+    try { window.localStorage.removeItem(name); } catch (fehler) { /* nicht erreichbar */ }
+  }
+  zustand.auswahl = null;
+  zustand.profilOffen = false;
+  zustand.geschlecht = "mann";
+  zustand.training = neuesTraining();
+  zustand.statistik = { zeitraum: 30, gruppe: null };
+  zustand.ernaehrung = null;
+  renderAlles();
+  zeigeToast("Alle Daten wurden gelöscht.");
+}
+
+
+/* ======================================================================
+   ABSCHNITT L: Navigation, Ereignisse und Start
+   ====================================================================== */
+
+// Alles neu zeichnen (nach dem Speichern oder Ändern von Daten)
+function renderAlles() {
+  renderFiguren();
+  renderProfil();
+  renderTraining();
+  renderStatistik();
+  renderErnaehrung();
+  renderMehr();
+}
+
+// Bereich wechseln (untere Navigationsleiste)
+function zeigeSeite(name) {
+  zustand.seite = name;
+  zustand.profilOffen = false;           // Vollbild-Profil schließen
+  if (name !== "koerper") zustand.auswahl = null;
+  const seiten = document.querySelectorAll(".seite");
+  for (let i = 0; i < seiten.length; i++) {
+    seiten[i].classList.toggle("aktiv", seiten[i].id === "seite-" + name);
+  }
+  const knoepfe = document.querySelectorAll(".nav button");
+  for (let j = 0; j < knoepfe.length; j++) {
+    const aktiv = knoepfe[j].dataset.wert === name;
+    knoepfe[j].classList.toggle("aktiv", aktiv);
+    if (aktiv) knoepfe[j].setAttribute("aria-current", "page");
+    else knoepfe[j].removeAttribute("aria-current");
+  }
+  renderAlles();                         // Daten sind immer aktuell
+  window.scrollTo(0, 0);
+}
+
+// Alle Schaltflächen mit data-aktion laufen hier zusammen
+function behandleAktion(aktion, wert, element) {
+  const t = zustand.training;
+  switch (aktion) {
+    case "seite": zeigeSeite(wert); break;
+
+    // Körper
+    case "geschlecht": {
+      zustand.geschlecht = wert;
+      const einst = ladeWert(SCHLUESSEL.einstellungen, {});
+      einst.koerper = wert;
+      speichereWert(SCHLUESSEL.einstellungen, einst);
+      renderFiguren();
+      break;
+    }
+    case "ansicht": zustand.ansicht = wert; renderFiguren(); break;
+    case "profil-zurueck": schliesseProfil(); break;
+    case "erstes-training": {
+      const gruppe = zustand.auswahl;
+      zeigeSeite("training");
+      startTraining(gruppe);
+      break;
+    }
+
+    // Training
+    case "training-starten": zeigeSeite("training"); startTraining(null); break;
+    case "training-abbrechen": zustand.training = neuesTraining(); renderTraining(); break;
+    case "gruppe-waehlen": t.gruppe = wert; t.gewaehlt = []; t.eingaben = {}; t.fehler = []; renderTraining(); break;
+    case "schritt-weiter": schrittWeiter(); break;
+    case "schritt-zurueck": t.fehler = []; t.schritt = t.schritt - 1; renderTraining(); break;
+    case "uebung-toggle": {
+      const position = t.gewaehlt.indexOf(wert);
+      if (position === -1) t.gewaehlt.push(wert); else t.gewaehlt.splice(position, 1);
+      t.fehler = [];
+      renderTraining();
+      break;
+    }
+    case "eigene-anlegen": {
+      const ergebnis = speichereEigeneUebung(t.gruppe, $("eigene-uebung").value);
+      if (ergebnis.ok) {
+        t.gewaehlt.push(ergebnis.name);
+        t.fehler = [];
+        zeigeToast("Eigene Übung gespeichert.");
+      } else {
+        t.fehler = [ergebnis.fehler];
+      }
+      renderTraining();
+      break;
+    }
+    case "eigene-loeschen": {
+      loescheEigeneUebung(t.gruppe, wert);
+      const position = t.gewaehlt.indexOf(wert);
+      if (position !== -1) t.gewaehlt.splice(position, 1);
+      renderTraining();
+      break;
+    }
+    case "training-speichern": speichereTraining(); break;
+    case "einheit-loeschen": {
+      if (!window.confirm("Diese Trainingseinheit löschen?")) break;
+      const ids = wert.split(",");
+      for (let i = 0; i < ids.length; i++) loescheTrainingseinheit(Number(ids[i]));
+      renderAlles();
+      zeigeToast("Trainingseinheit gelöscht.");
+      break;
+    }
+
+    // Statistik, Ernährung, Mehr
+    case "zeitraum": zustand.statistik.zeitraum = Number(wert); renderStatistik(); break;
+    case "ernaehrung-berechnen": berechneErnaehrungAusFormular(); break;
+    case "angaben-speichern": speichereAngaben(); break;
+    case "einstellungen-speichern": speichereEinstellungen(); break;
+    case "daten-loeschen": loescheAlleDaten(); break;
+  }
+}
+
+// Klicks (Muskelgruppen im Körperbild und alle Schaltflächen)
+document.addEventListener("click", function (ereignis) {
+  const muskel = ereignis.target.closest(".muskel");
+  if (muskel) {
+    klickMuskel(muskel.dataset.gruppe);
+    return;
+  }
+  const element = ereignis.target.closest("[data-aktion]");
+  if (element) {
+    behandleAktion(element.dataset.aktion, element.dataset.wert, element);
+  }
+});
+
+// Tastatur: Enter oder Leertaste wählt eine fokussierte Muskelgruppe
+document.addEventListener("keydown", function (ereignis) {
+  if (ereignis.key !== "Enter" && ereignis.key !== " ") return;
+  const muskel = ereignis.target.closest ? ereignis.target.closest(".muskel") : null;
+  if (muskel) {
+    ereignis.preventDefault();
+    klickMuskel(muskel.dataset.gruppe);
+  }
+});
+
+// Eingaben im Trainings-Formular merken (ohne die Seite neu zu zeichnen)
+document.addEventListener("input", function (ereignis) {
+  const feld = ereignis.target.dataset ? ereignis.target.dataset.feld : null;
+  if (!feld) return;
+  const t = zustand.training;
+  if (feld === "datum") {
+    t.datum = ereignis.target.value;
+  } else if (feld === "saetze" || feld === "wiederholungen" || feld === "gewicht") {
+    const name = ereignis.target.dataset.uebung;
+    if (!t.eingaben[name]) t.eingaben[name] = {};
+    t.eingaben[name][feld] = ereignis.target.value;
+  }
+});
+
+// Auswahlfeld in der Statistik
+document.addEventListener("change", function (ereignis) {
+  if (ereignis.target.dataset && ereignis.target.dataset.feld === "statistik-gruppe") {
+    zustand.statistik.gruppe = ereignis.target.value;
+    renderStatistik();
+  }
+});
+
+// Wischen zwischen Vorder- und Rückseite (nur Smartphone)
+let wischStart = null;
+$("wischbereich").addEventListener("touchstart", function (ereignis) {
+  wischStart = { x: ereignis.touches[0].clientX, y: ereignis.touches[0].clientY };
+}, { passive: true });
+$("wischbereich").addEventListener("touchend", function (ereignis) {
+  if (wischStart === null || window.innerWidth >= 700) { wischStart = null; return; }
+  const ende = ereignis.changedTouches[0];
+  const dx = ende.clientX - wischStart.x;
+  const dy = ende.clientY - wischStart.y;
+  wischStart = null;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    if (dx < 0 && zustand.ansicht === "vorne") { zustand.ansicht = "hinten"; renderFiguren(); }
+    if (dx > 0 && zustand.ansicht === "hinten") { zustand.ansicht = "vorne"; renderFiguren(); }
+  }
+}, { passive: true });
+
+// ----- Start der App -----
+// Beim Öffnen: immer Vorderseite, keine Muskelgruppe ausgewählt
+zustand.geschlecht = holeEinstellungen().koerper;
+zustand.training = neuesTraining();
+renderAlles();
+</script>
+</body>
+</html>

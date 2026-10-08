@@ -1,0 +1,31 @@
+<label>Gewicht (kg): <input type="number" id="gewicht" min="1" step="0.1"></label><br>
+<label>Übungen heute (0–8): <input type="number" id="uebungen" min="0" max="8" step="1"></label><br>
+<label>Ziel:
+  <select id="ziel">
+    <option>Zunehmen</option>
+    <option>Abnehmen</option>
+    <option>Muskelaufbau</option>
+    <option>Gewicht halten</option>
+  </select>
+</label><br>
+<button onclick="berechnen()">Berechnen</button>
+<p id="ergebnis"></p>
+
+<script src="../Algorithmen/ernaehrung.js"></script>
+
+<script>
+  function berechnen() {
+    const gewicht = parseFloat(document.getElementById("gewicht").value);
+    const uebungen = parseInt(document.getElementById("uebungen").value, 10);
+    const ziel = document.getElementById("ziel").value;
+
+    const ergebnis = berechneErnaehrung(gewicht, uebungen, ziel);
+    const ausgabe = document.getElementById("ergebnis");
+
+    if (ergebnis.ok) {
+      ausgabe.textContent = "Kalorien: " + ergebnis.kalorien + " kcal, Protein: " + ergebnis.protein + " g";
+    } else {
+      ausgabe.textContent = ergebnis.fehler;
+    }
+  }
+</script>

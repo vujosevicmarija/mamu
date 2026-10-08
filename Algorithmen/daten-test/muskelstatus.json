@@ -1,0 +1,134 @@
+{
+  "Schultern": {
+    "score": 0,
+    "status": "Inactive",
+    "farbe": "Weiß",
+    "teilpunkte": {
+      "haeufigkeit": 0,
+      "relativeLeistung": 0,
+      "wiederholungen": 0,
+      "saetze": 0,
+      "entwicklung": 0
+    }
+  },
+  "Brust": {
+    "score": 0,
+    "status": "Inactive",
+    "farbe": "Weiß",
+    "teilpunkte": {
+      "haeufigkeit": 0,
+      "relativeLeistung": 0,
+      "wiederholungen": 0,
+      "saetze": 0,
+      "entwicklung": 0
+    }
+  },
+  "Bizeps": {
+    "score": 26,
+    "status": "Rising",
+    "farbe": "Orange",
+    "teilpunkte": {
+      "haeufigkeit": 1.7,
+      "relativeLeistung": 2.9,
+      "wiederholungen": 10,
+      "saetze": 11.3,
+      "entwicklung": 0
+    }
+  },
+  "Bauch": {
+    "score": 14,
+    "status": "Starter",
+    "farbe": "Rot",
+    "teilpunkte": {
+      "haeufigkeit": 1.7,
+      "relativeLeistung": 0,
+      "wiederholungen": 1,
+      "saetze": 11.3,
+      "entwicklung": 0
+    }
+  },
+  "Oberschenkel": {
+    "score": 0,
+    "status": "Inactive",
+    "farbe": "Weiß",
+    "teilpunkte": {
+      "haeufigkeit": 0,
+      "relativeLeistung": 0,
+      "wiederholungen": 0,
+      "saetze": 0,
+      "entwicklung": 0
+    }
+  },
+  "Waden": {
+    "score": 0,
+    "status": "Inactive",
+    "farbe": "Weiß",
+    "teilpunkte": {
+      "haeufigkeit": 0,
+      "relativeLeistung": 0,
+      "wiederholungen": 0,
+      "saetze": 0,
+      "entwicklung": 0
+    }
+  },
+  "Nacken": {
+    "score": 0,
+    "status": "Inactive",
+    "farbe": "Weiß",
+    "teilpunkte": {
+      "haeufigkeit": 0,
+      "relativeLeistung": 0,
+      "wiederholungen": 0,
+      "saetze": 0,
+      "entwicklung": 0
+    }
+  },
+  "Rücken": {
+    "score": 0,
+    "status": "Inactive",
+    "farbe": "Weiß",
+    "teilpunkte": {
+      "haeufigkeit": 0,
+      "relativeLeistung": 0,
+      "wiederholungen": 0,
+      "saetze": 0,
+      "entwicklung": 0
+    }
+  },
+  "Trizeps": {
+    "score": 0,
+    "status": "Inactive",
+    "farbe": "Weiß",
+    "teilpunkte": {
+      "haeufigkeit": 0,
+      "relativeLeistung": 0,
+      "wiederholungen": 0,
+      "saetze": 0,
+      "entwicklung": 0
+    }
+  },
+  "Gesäß": {
+    "score": 0,
+    "status": "Inactive",
+    "farbe": "Weiß",
+    "teilpunkte": {
+      "haeufigkeit": 0,
+      "relativeLeistung": 0,
+      "wiederholungen": 0,
+      "saetze": 0,
+      "entwicklung": 0
+    }
+  },
+  "Beine": {
+    "score": 0,
+    "status": "Inactive",
+    "farbe": "Weiß",
+    "teilpunkte": {
+      "haeufigkeit": 0,
+      "relativeLeistung": 0,
+      "wiederholungen": 0,
+      "saetze": 0,
+      "entwicklung": 0
+    }
+  }
+}

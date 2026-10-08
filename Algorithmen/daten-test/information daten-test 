@@ -1,0 +1,4 @@
+// Der Ordner "daten-test" wird bei den automatisierten Tests erstellt.
+// Er enthält Beispieldaten für Trainingseinheiten, Muskelstatus und Profil.
+// Die Testdaten dienen zur Überprüfung der Funktionen, ohne die eigentlichen
+// mamu-Daten zu verändern. Nach Abschluss der Tests kann der Ordner gelöscht werden.

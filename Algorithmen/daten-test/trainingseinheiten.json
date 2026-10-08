@@ -1,0 +1,23 @@
+{
+  "naechsteId": 7,
+  "einheiten": [
+    {
+      "id": 1,
+      "muskelgruppe": "Bizeps",
+      "uebung": "Bizepscurls",
+      "gewicht": 10,
+      "wiederholungen": 10,
+      "saetze": 3,
+      "datum": "2026-10-01"
+    },
+    {
+      "id": 6,
+      "muskelgruppe": "Bauch",
+      "uebung": "Plank",
+      "gewicht": 0,
+      "wiederholungen": 1,
+      "saetze": 3,
+      "datum": "2026-10-01"
+    }
+  ]
+}
