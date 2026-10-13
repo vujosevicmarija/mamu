@@ -1,0 +1,2229 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<!-- Kein Zoomen: Die Körperansicht hat eine feste Größe (Anforderung des Projekts) -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>mamu – Fitness &amp; Ernährung</title>
+<style>
+/* ======================================================================
+   mamu – Gestaltung (CSS)
+   Weißer Hintergrund, Salbeigrün als Akzent, abgerundete Karten.
+   Alle Farben stehen oben als Variablen, damit man sie leicht ändern kann.
+   ====================================================================== */
+:root {
+  --hintergrund: #ffffff;
+  --beige: #f6f2ec;
+  --linie: #e4dfd6;
+  --text: #1f2a24;
+  --text-leise: #5b6560;
+  --salbei: #7fa086;
+  --salbei-dunkel: #46664e;
+  --salbei-hell: #eaf1ec;
+  --fehler: #b3261e;
+  --fehler-hell: #fdecea;
+  --radius: 16px;
+  --nav-hoehe: 68px;
+  /* Statusfarben der Muskelgruppen */
+  --status-inactive: #ffffff;
+  --status-starter: #e8837c;
+  --status-rising: #f2b36a;
+  --status-advanced: #efd668;
+  --status-elite: #7fc592;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--hintergrund);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  padding-bottom: calc(var(--nav-hoehe) + env(safe-area-inset-bottom));
+  touch-action: pan-y;
+}
+h1, h2, h3 { line-height: 1.2; margin: 0 0 .5rem; }
+h1 { font-size: 1.6rem; }
+h2 { font-size: 1.15rem; }
+h3 { font-size: 1rem; }
+p { margin: 0 0 .5rem; }
+button, input, select { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+.nur-lesegeraet { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.leise { color: var(--text-leise); font-size: .9rem; }
+.skip-link { position: absolute; left: 8px; top: -60px; background: var(--salbei-dunkel); color: #fff; padding: 10px 14px; border-radius: 10px; z-index: 100; }
+.skip-link:focus { top: 8px; }
+
+/* Sichtbarer Tastaturfokus */
+:focus-visible { outline: 3px solid var(--salbei-dunkel); outline-offset: 2px; }
+
+/* ---------- Seitenaufbau ---------- */
+.bereich { padding: 16px 16px 24px; max-width: 760px; margin: 0 auto; }
+.bereich.breit { max-width: 1040px; }
+.seite-kopf { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.seite-kopf h1 { margin: 0; }
+.karte { background: #fff; border: 1px solid var(--linie); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(31, 42, 36, .04); }
+.karte.beige { background: var(--beige); border-color: transparent; }
+.karte h2 { margin-bottom: 10px; }
+.leer-zustand { text-align: center; padding: 22px 12px; }
+.leer-zustand p { color: var(--text-leise); }
+
+/* ---------- Schaltflächen ---------- */
+.knopf { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 18px; border-radius: 999px; border: 1.5px solid var(--salbei-dunkel); background: #fff; color: var(--salbei-dunkel); font-weight: 600; cursor: pointer; }
+.knopf:hover { background: var(--salbei-hell); }
+.knopf.primaer { background: var(--salbei-dunkel); color: #fff; }
+.knopf.primaer:hover { background: #3a5841; }
+.knopf.gefahr { border-color: var(--fehler); color: var(--fehler); }
+.knopf.gefahr:hover { background: var(--fehler-hell); }
+.knopf.breit { width: 100%; }
+.knopf[disabled] { opacity: .55; cursor: not-allowed; }
+.knopf.klein { min-height: 36px; padding: 6px 14px; font-size: .9rem; }
+.knopf-reihe { display: flex; gap: 10px; margin-top: 14px; }
+.knopf-reihe .knopf { flex: 1; }
+.rund { width: 44px; height: 44px; min-height: 44px; padding: 0; border-radius: 50%; }
+
+/* Umschalter (Mann/Frau, Vorne/Hinten) */
+.segment { display: inline-flex; background: var(--beige); border-radius: 999px; padding: 3px; }
+.segment button { border: 0; background: transparent; min-height: 40px; padding: 6px 16px; border-radius: 999px; cursor: pointer; font-weight: 600; color: var(--text-leise); }
+.segment button[aria-pressed="true"] { background: var(--salbei-dunkel); color: #fff; }
+
+/* ---------- Eingabefelder ---------- */
+.feld { display: block; margin-bottom: 12px; }
+.feld > .feld-name { display: block; font-weight: 600; font-size: .92rem; margin-bottom: 4px; }
+.feld .zusatz { font-weight: 400; color: var(--text-leise); }
+.feld input, .feld select { width: 100%; min-height: 46px; padding: 10px 14px; border: 1.5px solid #cfc9bf; border-radius: 12px; background: #fff; }
+.feld input:focus, .feld select:focus { border-color: var(--salbei-dunkel); }
+.feld input.ungueltig { border-color: var(--fehler); background: var(--fehler-hell); }
+.fehlertext { color: var(--fehler); font-size: .88rem; margin-top: 4px; min-height: 0; }
+.fehlertext:empty { display: none; }
+.hilfetext { color: var(--text-leise); font-size: .85rem; margin-top: 4px; }
+.feld-reihe { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.feld-reihe.zwei { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 520px) { .feld-reihe { grid-template-columns: 1fr; } .feld-reihe.zwei { grid-template-columns: 1fr 1fr; } }
+.meldung { border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; font-size: .92rem; }
+.meldung.fehler { background: var(--fehler-hell); color: var(--fehler); }
+.meldung.info { background: var(--salbei-hell); color: var(--salbei-dunkel); }
+.meldung.warnung { background: #fff4de; color: #7a4b00; }
+
+/* ---------- Untere Navigation ---------- */
+.navleiste { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; background: #fff; border-top: 1px solid var(--linie); padding-bottom: env(safe-area-inset-bottom); }
+.navleiste ul { list-style: none; margin: 0 auto; padding: 0; display: flex; max-width: 760px; }
+.navleiste li { flex: 1; }
+.navleiste button { width: 100%; height: var(--nav-hoehe); border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; color: var(--text-leise); font-size: .75rem; font-weight: 600; }
+.navleiste button svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.navleiste button[aria-current="page"] { color: var(--salbei-dunkel); }
+.navleiste button[aria-current="page"] .nav-punkt { background: var(--salbei-hell); }
+.nav-punkt { display: flex; padding: 4px 18px; border-radius: 999px; }
+
+/* ---------- Körperansicht ---------- */
+.koerper-layout { display: block; }
+.koerper-bereich { display: flex; justify-content: center; gap: 24px; touch-action: pan-y; margin: 6px 0 10px; }
+.koerper-seite { text-align: center; }
+.seiten-name { font-weight: 600; color: var(--text-leise); font-size: .9rem; margin-bottom: 4px; }
+.seiten-umschalter { display: none; margin-bottom: 6px; }
+.koerper-svg { width: 230px; height: 511px; display: block; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+.haut-umriss { fill: none; stroke: #b79b84; stroke-width: 3; stroke-linejoin: round; }
+.haut-flaeche { stroke: none; }
+.haut-umriss, .haut-flaeche { pointer-events: none; }
+.muskel { cursor: pointer; outline: none; }
+.muskel-form { stroke: #c9ad95; stroke-width: 1; stroke-linejoin: round; transition: filter .15s; }
+.muskel-licht { pointer-events: none; stroke: none; }
+.status-inactive .muskel-form { fill: var(--status-inactive); }
+.status-starter .muskel-form { fill: var(--status-starter); }
+.status-rising .muskel-form { fill: var(--status-rising); }
+.status-advanced .muskel-form { fill: var(--status-advanced); }
+.status-elite .muskel-form { fill: var(--status-elite); }
+.muskel:hover .muskel-form { filter: brightness(.94); }
+.muskel:focus-visible .muskel-form { stroke: #1d3a26; stroke-width: 2.2; }
+.detail-linie { fill: none; stroke: #b79b84; stroke-width: .8; opacity: .6; stroke-linecap: round; pointer-events: none; }
+.auswahl-rand { pointer-events: none; }
+.auswahl-pfad { fill: none; stroke: #2b5a3a; stroke-width: 2.6; stroke-linejoin: round; }
+.score-label { pointer-events: none; }
+.score-label rect { fill: #fff; stroke: #2b5a3a; stroke-width: 1.4; }
+.score-label text { font: 700 11px system-ui, sans-serif; fill: #1f4a2e; }
+.legende { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; padding: 0; margin: 8px 0 6px; font-size: .85rem; }
+.legende li { display: flex; align-items: center; gap: 6px; }
+.farbpunkt { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #c9ad95; display: inline-block; }
+.hinweis-mitte { text-align: center; }
+
+@media (max-width: 699px) {
+  .seiten-umschalter { display: inline-flex; }
+  .koerper-haupt { text-align: center; }
+  .koerper-bereich[data-aktiv="vorne"] .koerper-seite[data-seite="hinten"] { display: none; }
+  .koerper-bereich[data-aktiv="hinten"] .koerper-seite[data-seite="vorne"] { display: none; }
+  .koerper-bereich .seiten-name { display: none; }
+}
+
+/* ---------- Muskelprofil ---------- */
+/* Handy: eigene Vollbildansicht über dem Inhalt (die Navigation bleibt sichtbar) */
+.profil { display: none; }
+.profil.offen { display: block; position: fixed; left: 0; right: 0; top: 0; bottom: calc(var(--nav-hoehe) + env(safe-area-inset-bottom)); background: #fff; z-index: 40; overflow-y: auto; padding: 16px; }
+.profil-innen { max-width: 640px; margin: 0 auto; }
+.profil-kopf { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.profil-kopf h2 { font-size: 1.5rem; margin: 0; }
+.score-bereich { display: flex; align-items: center; gap: 16px; }
+.ring { width: 110px; height: 110px; flex: none; }
+.ring-hintergrund { fill: none; stroke: var(--beige); stroke-width: 10; }
+.ring-wert { fill: none; stroke-width: 10; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; }
+.ring-zahl { font: 700 28px system-ui, sans-serif; fill: var(--text); text-anchor: middle; }
+.ring-klein { font: 500 11px system-ui, sans-serif; fill: var(--text-leise); text-anchor: middle; }
+.status-plakette { display: inline-block; padding: 4px 14px; border-radius: 999px; font-weight: 700; font-size: .9rem; border: 1px solid rgba(0,0,0,.12); }
+.status-plakette.starter { background: var(--status-starter); }
+.status-plakette.rising { background: var(--status-rising); }
+.status-plakette.advanced { background: var(--status-advanced); }
+.status-plakette.elite { background: var(--status-elite); }
+.kennzahlen { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.kennzahl { background: var(--beige); border-radius: 14px; padding: 12px; }
+.kennzahl .name { font-size: .8rem; color: var(--text-leise); font-weight: 600; }
+.kennzahl .wert { font-size: 1.15rem; font-weight: 700; }
+.kennzahl .punkte { font-size: .8rem; color: var(--text-leise); }
+.vergleich { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; margin-top: 10px; }
+.vergleich div { background: var(--beige); border-radius: 12px; padding: 8px 4px; }
+.vergleich .name { font-size: .75rem; color: var(--text-leise); font-weight: 600; }
+.vergleich .wert { font-weight: 700; font-size: 1.05rem; }
+.diagramm { width: 100%; height: auto; display: block; max-width: 520px; margin: 0 auto; }
+.diagramm .gitter { stroke: var(--linie); stroke-width: 1; }
+.diagramm .linie { fill: none; stroke: var(--salbei-dunkel); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.diagramm .punkt { fill: #fff; stroke: var(--salbei-dunkel); stroke-width: 2; }
+.diagramm .punkt.aktuell { fill: var(--salbei-dunkel); }
+.diagramm text { font: 11px system-ui, sans-serif; fill: var(--text-leise); }
+.empfehlungen { display: grid; gap: 10px; }
+.uebungskarte { display: flex; gap: 12px; align-items: center; border: 1px solid var(--linie); border-radius: 14px; padding: 10px; }
+.uebungsbild { width: 72px; height: 72px; flex: none; border-radius: 12px; background: var(--salbei-hell); display: flex; align-items: center; justify-content: center; }
+.uebungsbild svg { width: 44px; height: 44px; stroke: var(--salbei-dunkel); fill: none; stroke-width: 2; stroke-linecap: round; }
+.uebungskarte .titel { font-weight: 700; }
+.uebungskarte .info { color: var(--text-leise); font-size: .85rem; }
+.profil-leer { display: none; }
+@media (min-width: 1000px) {
+  .bereich.koerper { max-width: 1120px; }
+  .koerper-layout { display: grid; grid-template-columns: minmax(520px, 1fr) minmax(360px, 460px); gap: 28px; align-items: start; }
+  .profil, .profil.offen { display: block; position: static; padding: 0; overflow: visible; background: transparent; z-index: auto; }
+  .profil-leer { display: block; border: 1.5px dashed var(--linie); border-radius: var(--radius); padding: 40px 20px; text-align: center; color: var(--text-leise); }
+  .profil-innen { max-width: none; }
+}
+
+/* ---------- Training ---------- */
+.schritte { display: flex; gap: 6px; margin-bottom: 14px; }
+.schritte span { flex: 1; height: 6px; border-radius: 3px; background: var(--linie); }
+.schritte span.fertig { background: var(--salbei); }
+.schritte span.aktiv { background: var(--salbei-dunkel); }
+.gruppenraster { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.gruppenknopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 52px; padding: 10px 14px; border-radius: 14px; border: 1.5px solid var(--linie); background: #fff; cursor: pointer; font-weight: 600; text-align: left; }
+.gruppenknopf:hover { border-color: var(--salbei); }
+.gruppenknopf[aria-pressed="true"] { border-color: var(--salbei-dunkel); background: var(--salbei-hell); }
+.chip-liste { display: grid; gap: 8px; }
+.chip { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--linie); border-radius: 14px; background: #fff; cursor: pointer; text-align: left; width: 100%; }
+.chip[aria-pressed="true"] { border-color: var(--salbei-dunkel); background: var(--salbei-hell); }
+.chip .haken { width: 22px; height: 22px; border-radius: 6px; border: 2px solid #b9b3a8; flex: none; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+.chip[aria-pressed="true"] .haken { background: var(--salbei-dunkel); border-color: var(--salbei-dunkel); }
+.chip[aria-pressed="true"] .haken::after { content: ""; width: 6px; height: 11px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg) translate(-1px, -1px); }
+.chip .chip-name { font-weight: 700; display: block; }
+.chip .chip-text { font-size: .85rem; color: var(--text-leise); display: block; }
+.eingabe-uebung { border: 1px solid var(--linie); border-radius: 14px; padding: 12px; margin-bottom: 10px; }
+.sitzung { border: 1px solid var(--linie); border-radius: 14px; padding: 12px; margin-bottom: 10px; }
+.sitzung-kopf { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; margin-bottom: 6px; }
+.sitzung ul { margin: 0; padding-left: 18px; font-size: .92rem; }
+.kennzahl-zeile { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+
+/* ---------- Statistik ---------- */
+.balkenzeile { display: grid; grid-template-columns: 110px 1fr 74px; gap: 8px; align-items: center; margin-bottom: 8px; font-size: .9rem; }
+.balken { height: 14px; border-radius: 7px; background: var(--beige); overflow: hidden; }
+.balken span { display: block; height: 100%; border-radius: 7px; }
+.balkenzeile .aenderung { text-align: right; font-weight: 600; font-size: .85rem; }
+.pos { color: #2f6b3f; } .neg { color: var(--fehler); }
+
+/* ---------- Dialog und Hinweis ---------- */
+dialog { border: 0; border-radius: var(--radius); padding: 20px; max-width: min(92vw, 420px); box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+dialog::backdrop { background: rgba(31, 42, 36, .45); }
+dialog .knopf-reihe { margin-top: 18px; }
+.toast { position: fixed; left: 50%; bottom: calc(var(--nav-hoehe) + 18px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--salbei-dunkel); color: #fff; padding: 10px 18px; border-radius: 999px; z-index: 90; font-weight: 600; max-width: 90vw; text-align: center; }
+.avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--salbei); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; flex: none; }
+.profil-zeile { display: flex; align-items: center; gap: 14px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
+
+<main id="inhalt">
+
+  <!-- ===== Bereich 1: Körper ===== -->
+  <section id="bereich-koerper" class="bereich koerper" aria-labelledby="titel-koerper" data-bereich="koerper">
+    <div class="koerper-layout">
+      <div class="koerper-haupt">
+        <header class="seite-kopf">
+          <h1 id="titel-koerper" tabindex="-1">Körper</h1>
+          <div class="segment" role="group" aria-label="Körperform">
+            <button type="button" data-aktion="geschlecht" data-wert="mann" aria-pressed="true">Mann</button>
+            <button type="button" data-aktion="geschlecht" data-wert="frau" aria-pressed="false">Frau</button>
+          </div>
+        </header>
+        <div class="hinweis-mitte">
+          <div class="segment seiten-umschalter" role="group" aria-label="Körperseite">
+            <button type="button" data-aktion="seite" data-wert="vorne" aria-pressed="true">Vorne</button>
+            <button type="button" data-aktion="seite" data-wert="hinten" aria-pressed="false">Hinten</button>
+          </div>
+        </div>
+        <div id="koerper-bereich" class="koerper-bereich" data-aktiv="vorne">
+          <div class="koerper-seite" data-seite="vorne"><p class="seiten-name">Vorderansicht</p><div class="svg-platz"></div></div>
+          <div class="koerper-seite" data-seite="hinten"><p class="seiten-name">Rückansicht</p><div class="svg-platz"></div></div>
+        </div>
+        <ul id="legende" class="legende" aria-label="Legende der Statusfarben"></ul>
+        <p class="leise hinweis-mitte">Tippe auf eine Muskelgruppe. Auf dem Handy wechselst du die Seite durch Wischen oder mit „Vorne / Hinten“.</p>
+      </div>
+      <aside id="profil" class="profil" aria-label="Muskelprofil"></aside>
+    </div>
+  </section>
+
+  <!-- ===== Bereich 2: Training ===== -->
+  <section id="bereich-training" class="bereich" aria-labelledby="titel-training" data-bereich="training" hidden>
+    <header class="seite-kopf"><h1 id="titel-training" tabindex="-1">Training</h1></header>
+    <div id="training-uebersicht"></div>
+    <div id="training-wizard" hidden></div>
+  </section>
+
+  <!-- ===== Bereich 3: Statistiken ===== -->
+  <section id="bereich-statistik" class="bereich" aria-labelledby="titel-statistik" data-bereich="statistik" hidden>
+    <header class="seite-kopf"><h1 id="titel-statistik" tabindex="-1">Statistiken</h1></header>
+    <div id="statistik-inhalt"></div>
+  </section>
+
+  <!-- ===== Bereich 4: Ernährung ===== -->
+  <section id="bereich-ernaehrung" class="bereich" aria-labelledby="titel-ernaehrung" data-bereich="ernaehrung" hidden>
+    <header class="seite-kopf"><h1 id="titel-ernaehrung" tabindex="-1">Ernährung</h1></header>
+    <div id="ernaehrung-inhalt"></div>
+  </section>
+
+  <!-- ===== Bereich 5: Mehr ===== -->
+  <section id="bereich-mehr" class="bereich" aria-labelledby="titel-mehr" data-bereich="mehr" hidden>
+    <header class="seite-kopf"><h1 id="titel-mehr" tabindex="-1">Mehr</h1></header>
+    <div id="mehr-inhalt"></div>
+  </section>
+
+</main>
+
+<!-- Dauerhaft sichtbare Navigation -->
+<nav class="navleiste" aria-label="Hauptnavigation">
+  <ul>
+    <li><button type="button" data-aktion="bereich" data-wert="koerper" aria-current="page"><span class="nav-punkt"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="4.5" r="2.3"/><path d="M12 8v6M7 9.5l5-1.5 5 1.5M9 21l3-7 3 7"/></svg></span>Körper</button></li>
+    <li><button type="button" data-aktion="bereich" data-wert="training"><span class="nav-punkt"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6M6 7v10M18 7v10M21 9v6M6 12h12"/></svg></span>Training</button></li>
+    <li><button type="button" data-aktion="bereich" data-wert="statistik"><span class="nav-punkt"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg></span>Statistiken</button></li>
+    <li><button type="button" data-aktion="bereich" data-wert="ernaehrung"><span class="nav-punkt"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c-2-2-6-1-6 3 0 5 3 10 6 10s6-5 6-10c0-4-4-5-6-3zM12 6c0-2 1-3 3-3"/></svg></span>Ernährung</button></li>
+    <li><button type="button" data-aktion="bereich" data-wert="mehr"><span class="nav-punkt"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg></span>Mehr</button></li>
+  </ul>
+</nav>
+
+<dialog id="dialog" aria-labelledby="dialog-titel">
+  <h2 id="dialog-titel">Bitte bestätigen</h2>
+  <p id="dialog-text"></p>
+  <div class="knopf-reihe">
+    <button type="button" class="knopf" id="dialog-nein">Abbrechen</button>
+    <button type="button" class="knopf primaer" id="dialog-ja">OK</button>
+  </div>
+</dialog>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+"use strict";
+
+/* ======================================================================
+   A. BESTEHENDE ALGORITHMEN – UNVERÄNDERT
+   Diese Funktionen stammen aus ernaehrung.js, uebungsempfehlung.js und berechnung.js.
+   ====================================================================== */
+// ===== Ernährung (unverändert aus ernaehrung.js) =====
+function berechneErnaehrung(gewicht, anzahlUebungen, ziel) {
+    // Eingaben prüfen
+    if (typeof gewicht !== "number" || isNaN(gewicht) || gewicht <= 0) {
+        return { ok: false, fehler: "Bitte ein gültiges Gewicht größer als 0 eingeben." };
+    }
+    if (!Number.isInteger(anzahlUebungen) || anzahlUebungen < 0 || anzahlUebungen > 8) {
+        return { ok: false, fehler: "Die Anzahl der Übungen muss eine ganze Zahl zwischen 0 und 8 sein." };
+    }
+
+    // Ziel vereinheitlichen (Groß-/Kleinschreibung egal)
+    const zielKlein = String(ziel).trim().toLowerCase();
+
+    // Aktivitätslevel bestimmen
+    let AK, AP;
+    if (anzahlUebungen <= 2) {
+        AK = 1.0; AP = 1.0;
+    } else if (anzahlUebungen <= 5) {
+        AK = 1.1; AP = 1.5;
+    } else {
+        AK = 1.2; AP = 2.0;
+    }
+
+    // Muskelaufbau verwendet immer AP = 2
+    if (zielKlein === "muskelaufbau") {
+        AP = 2.0;
+    }
+
+    // Kalorienbedarf je nach Ziel
+    const grundbedarf = gewicht * 30 * AK;
+    let kalorien;
+
+    switch (zielKlein) {
+        case "gewicht halten": kalorien = grundbedarf; break;
+        case "zunehmen":       kalorien = grundbedarf + 400; break;
+        case "abnehmen":       kalorien = grundbedarf - 300; break;
+        case "muskelaufbau":   kalorien = grundbedarf + 300; break;
+        default:
+            return { ok: false, fehler: "Ungültiges Ziel. Erlaubt: Zunehmen, Abnehmen, Muskelaufbau, Gewicht halten." };
+    }
+
+    const protein = gewicht * AP;
+
+    return {
+        ok: true,
+        kalorien: Math.round(kalorien),
+        protein: Math.round(protein)
+    };
+}
+
+// ===== Übungsauswahl (unverändert aus uebungsempfehlung.js; nur der Katalogeintrag der entfernten Gruppe fehlt) =====
+// ============================================================
+// Übungsauswahl für die mamu-App
+// Eingaben: Muskelgruppe, Trainingsziel, Trainingsstatus
+// Ausgabe: genau 3 Übungen mit Sätzen und Wiederholungen
+// ============================================================
+
+// ---------- 1. Übungskatalog ----------
+const uebungskatalog = {
+  "Schultern": [
+    { name: "Shoulder Press", beschreibung: "Hanteln oder eine Langhantel über den Kopf drücken, um die Schultermuskulatur zu trainieren." },
+    { name: "Seitheben", beschreibung: "Hanteln seitlich bis ungefähr auf Schulterhöhe anheben." },
+    { name: "Frontheben", beschreibung: "Hanteln kontrolliert vor dem Körper bis auf Schulterhöhe anheben." }
+  ],
+  "Brust": [
+    { name: "Bankdrücken", beschreibung: "Eine Langhantel oder Hanteln im Liegen kontrolliert von der Brust nach oben drücken." },
+    { name: "Liegestütze", beschreibung: "Den Körper aus einer stabilen Liegestützposition absenken und wieder nach oben drücken." },
+    { name: "Butterfly", beschreibung: "Die Arme an einer Butterfly-Maschine vor dem Körper zusammenführen." }
+  ],
+  "Bizeps": [
+    { name: "Bizepscurls", beschreibung: "Hanteln durch Beugen der Ellenbogen in Richtung Schultern anheben." },
+    { name: "Hammer Curls", beschreibung: "Hanteln mit neutraler Handstellung und den Handflächen zueinander anheben." },
+    { name: "Preacher Curls", beschreibung: "Die Arme auf einem Curl-Pult abstützen und das Gewicht kontrolliert anheben." }
+  ],
+  "Bauch": [
+    { name: "Crunches", beschreibung: "Den Oberkörper aus der Rückenlage durch Anspannen der Bauchmuskulatur leicht anheben." },
+    { name: "Plank", beschreibung: "Den Körper in einer geraden Position auf Unterarmen und Zehenspitzen stabil halten." },
+    { name: "Beinheben", beschreibung: "Die gestreckten oder leicht gebeugten Beine aus der Rückenlage kontrolliert anheben und absenken." }
+  ],
+  "Oberschenkel": [
+    { name: "Beinpresse", beschreibung: "Das Gewicht mit den Beinen kontrolliert von sich wegdrücken." },
+    { name: "Beinstrecker", beschreibung: "Die Unterschenkel an einer Maschine gegen Widerstand nach vorne strecken." },
+    { name: "Bulgarian Split Squats", beschreibung: "In versetzter Beinstellung mit dem hinteren Fuß auf einer Erhöhung kontrolliert in die Kniebeuge gehen." }
+  ],
+  "Waden": [
+    { name: "Wadenheben stehend", beschreibung: "Die Fersen anheben und auf die Fußballen stellen." },
+    { name: "Wadenheben sitzend", beschreibung: "Im Sitzen die Fersen gegen Widerstand anheben." },
+    { name: "Donkey Calf Raises", beschreibung: "Mit nach vorne geneigtem Oberkörper die Fersen kontrolliert anheben." }
+  ],
+  "Nacken": [
+    { name: "Shrugs", beschreibung: "Die Schultern mit oder ohne Hanteln kontrolliert in Richtung Ohren anheben." },
+    { name: "Nackenstreckung", beschreibung: "Den Kopf gegen einen sehr leichten Widerstand kontrolliert nach hinten bewegen." },
+    { name: "Nackenbeugung", beschreibung: "Den Kopf gegen einen sehr leichten Widerstand kontrolliert nach vorne bewegen." }
+  ],
+  "Rücken": [
+    { name: "Lat Pulldown", beschreibung: "Eine Stange kontrolliert von oben in Richtung Brust ziehen." },
+    { name: "Rudern", beschreibung: "Ein Gewicht kontrolliert in Richtung Bauch ziehen und die Schulterblätter zusammenführen." },
+    { name: "Rückenstrecker", beschreibung: "Den Oberkörper aus einer nach vorne geneigten Position kontrolliert aufrichten." }
+  ],
+  "Trizeps": [
+    { name: "Trizepsdrücken", beschreibung: "Ein Seil oder eine Stange am Kabelzug durch Strecken der Ellenbogen nach unten drücken." },
+    { name: "Dips", beschreibung: "Den Körper mit den Armen absenken und wieder nach oben drücken." },
+    { name: "Overhead Extensions", beschreibung: "Ein Gewicht hinter dem Kopf durch Strecken der Ellenbogen nach oben bewegen." }
+  ],
+  "Gesäß": [
+    { name: "Hip Thrust", beschreibung: "Die Hüfte mit einer Hantel oder Langhantel kontrolliert nach oben drücken." },
+    { name: "Romanian Deadlift", beschreibung: "Die Hüfte nach hinten schieben und das Gewicht mit leicht gebeugten Knien kontrolliert absenken." },
+    { name: "Glute Bridge", beschreibung: "Das Becken aus der Rückenlage durch Anspannen der Gesäßmuskulatur anheben." }
+  ]
+};
+
+// ---------- 2. Das Trainingsziel bestimmt die Wiederholungen ----------
+const trainingsziele = {
+  "Muskelaufbau":   { wiederholungen: "8–12",  zweck: "Muskelwachstum fördern" },
+  "Abnehmen":       { wiederholungen: "12–15", zweck: "Muskulatur erhalten und das Training unterstützen" },
+  "Gewicht halten": { wiederholungen: "10–12", zweck: "Kraft und Muskulatur erhalten" },
+  "Zunehmen":       { wiederholungen: "8–12",  zweck: "Körpergewicht und Muskelmasse erhöhen" }
+};
+
+// ---------- 3. Der Trainingsstatus bestimmt NUR die Sätze ----------
+const saetzeProStatus = {
+  "Starter": 2,
+  "Rising": 3,
+  "Advanced": 3,
+  "Elite": 4
+};
+
+// ---------- 4. Hilfsfunktion ----------
+// Sucht einen Eintrag, egal ob groß oder klein geschrieben wurde.
+// Gibt den richtigen Namen zurück oder null, wenn nichts passt.
+function findeSchluessel(objekt, eingabe) {
+  if (typeof eingabe !== "string") {
+    return null;
+  }
+  const gesucht = eingabe.trim().toLowerCase();
+  const alleNamen = Object.keys(objekt);
+  for (let i = 0; i < alleNamen.length; i++) {
+    if (alleNamen[i].toLowerCase() === gesucht) {
+      return alleNamen[i];
+    }
+  }
+  return null;
+}
+
+// ---------- 5. Hauptfunktion: der Algorithmus ----------
+function waehleUebungen(muskelgruppe, trainingsziel, trainingsstatus) {
+
+  // Schritt 1: Muskelgruppe prüfen
+  const gruppe = findeSchluessel(uebungskatalog, muskelgruppe);
+  if (gruppe === null) {
+    return {
+      ok: false,
+      fehler: "Ungültige Muskelgruppe. Erlaubt sind: " + Object.keys(uebungskatalog).join(", ") + "."
+    };
+  }
+
+  // Schritt 2: Trainingsziel prüfen
+  const ziel = findeSchluessel(trainingsziele, trainingsziel);
+  if (ziel === null) {
+    return {
+      ok: false,
+      fehler: "Ungültiges Trainingsziel. Erlaubt sind: " + Object.keys(trainingsziele).join(", ") + "."
+    };
+  }
+
+  // Schritt 3: Trainingsstatus prüfen (fehlt er, wird Starter verwendet)
+  let status;
+  const statusFehlt = (trainingsstatus === undefined ||
+                       trainingsstatus === null ||
+                       String(trainingsstatus).trim() === "");
+  if (statusFehlt) {
+    status = "Starter";
+  } else {
+    status = findeSchluessel(saetzeProStatus, trainingsstatus);
+    if (status === null) {
+      return {
+        ok: false,
+        fehler: "Ungültiger Trainingsstatus. Erlaubt sind: " + Object.keys(saetzeProStatus).join(", ") + "."
+      };
+    }
+  }
+
+  // Schritt 4: Sätze und Wiederholungen bestimmen
+  const saetze = saetzeProStatus[status];                      // nur vom Status abhängig
+  const wiederholungen = trainingsziele[ziel].wiederholungen;  // nur vom Ziel abhängig
+
+  // Schritt 5: die drei Übungen der Muskelgruppe aus dem Katalog nehmen
+  // (immer genau drei, immer dieselben, nicht zufällig)
+  const katalogUebungen = uebungskatalog[gruppe];
+  const ergebnisUebungen = [];
+  for (let i = 0; i < 3; i++) {
+    ergebnisUebungen.push({
+      name: katalogUebungen[i].name,
+      beschreibung: katalogUebungen[i].beschreibung,
+      saetze: saetze,
+      wiederholungen: wiederholungen
+    });
+  }
+
+  // Schritt 6: Sicherheitshinweis bei Nackenübungen
+  let hinweis = null;
+  if (gruppe === "Nacken") {
+    hinweis = "Sicherheitshinweis: Nackenübungen nur mit sehr leichtem Widerstand " +
+              "und ohne ruckartige Bewegungen ausführen.";
+  }
+
+  return {
+    ok: true,
+    muskelgruppe: gruppe,
+    trainingsziel: ziel,
+    zweck: trainingsziele[ziel].zweck,
+    trainingsstatus: status,
+    uebungen: ergebnisUebungen,
+    hinweis: hinweis
+  };
+}
+
+// ===== Score-Berechnung (unverändert aus berechnung.js) =====
+// ---------- Feste Werte aus den Projektvorgaben ----------
+const BETRACHTETE_TAGE = 30;     // Trainingshäufigkeit: letzte 30 Tage
+const ZIEL_TRAININGSTAGE = 12;   // 12 Trainingstage        -> volle Punkte
+const ZIEL_VERHAELTNIS = 1.0;    // Gewicht / Körpergewicht = 1,0 -> volle Punkte
+const ZIEL_WIEDERHOLUNGEN = 15;  // 15 Wiederholungen pro Satz -> volle Punkte
+const ZIEL_SAETZE = 4;           // 4 Sätze                 -> volle Punkte
+
+const MAX_HAEUFIGKEIT = 20;
+const MAX_RELATIVE_LEISTUNG = 20;
+const MAX_WIEDERHOLUNGEN = 15;
+const MAX_SAETZE = 15;
+
+// ---------- Datum ----------
+
+// Heutiges Datum im Format JJJJ-MM-TT (Ortszeit)
+function heutigesDatum() {
+  const jetzt = new Date();
+  const monat = String(jetzt.getMonth() + 1).padStart(2, "0");
+  const tag = String(jetzt.getDate()).padStart(2, "0");
+  return jetzt.getFullYear() + "-" + monat + "-" + tag;
+}
+
+// Prüft, ob ein Text ein echtes Datum im Format JJJJ-MM-TT ist
+function istGueltigesDatum(text) {
+  if (typeof text !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return false;
+  }
+  const datum = new Date(text + "T00:00:00Z");
+  if (isNaN(datum.getTime())) {
+    return false;
+  }
+  // 2026-02-30 würde sonst zu 2026-03-02 umgerechnet werden
+  return datum.toISOString().slice(0, 10) === text;
+}
+
+// Anzahl Tage zwischen zwei Datumsangaben (spaeter - frueher)
+function tageZwischen(frueher, spaeter) {
+  const a = new Date(frueher + "T00:00:00Z");
+  const b = new Date(spaeter + "T00:00:00Z");
+  return Math.round((b - a) / (24 * 60 * 60 * 1000));
+}
+
+// Sortiert Einheiten nach Datum (älteste zuerst). Bei gleichem Datum entscheidet die ID.
+function sortiereChronologisch(einheiten) {
+  const kopie = einheiten.slice();
+  kopie.sort(function (a, b) {
+    if (a.datum < b.datum) return -1;
+    if (a.datum > b.datum) return 1;
+    return a.id - b.id;
+  });
+  return kopie;
+}
+
+// ---------- Hilfsfunktionen für Punkte ----------
+
+// Punkte proportional zum Zielwert, aber höchstens die Maximalpunkte
+function punkteNachAnteil(wert, zielwert, maxPunkte) {
+  const punkte = (wert / zielwert) * maxPunkte;
+  if (punkte > maxPunkte) {
+    return maxPunkte;
+  }
+  return punkte;
+}
+
+// Rundet auf eine Nachkommastelle (nur für die Anzeige der Teilpunkte)
+function rundeEineStelle(zahl) {
+  return Math.round(zahl * 10) / 10;
+}
+
+// Größter Wert eines Feldes (z. B. "gewicht") in einer Liste von Einheiten
+function hoechsterWert(einheiten, feld) {
+  let maximum = 0;
+  for (let i = 0; i < einheiten.length; i++) {
+    if (einheiten[i][feld] > maximum) {
+      maximum = einheiten[i][feld];
+    }
+  }
+  return maximum;
+}
+
+// ---------- Teilbereich 1: Trainingshäufigkeit ----------
+// Zählt die verschiedenen Trainingstage der letzten 30 Tage
+// (heute und die 29 Tage davor = 30 Kalendertage).
+function zaehleTrainingstage(einheiten, heute) {
+  const schonGezaehlt = {};
+  let anzahl = 0;
+  for (let i = 0; i < einheiten.length; i++) {
+    const tage = tageZwischen(einheiten[i].datum, heute);
+    if (tage >= 0 && tage < BETRACHTETE_TAGE && !schonGezaehlt[einheiten[i].datum]) {
+      schonGezaehlt[einheiten[i].datum] = true;
+      anzahl++;
+    }
+  }
+  return anzahl;
+}
+
+// ---------- Teilbereich 5: Entwicklung über die Zeit ----------
+
+// Verbesserung: mehr Gewicht ODER bei gleichem Gewicht mehr Wiederholungen insgesamt
+function istVerbesserung(alt, neu) {
+  if (neu.gewicht > alt.gewicht) {
+    return true;
+  }
+  if (neu.gewicht === alt.gewicht) {
+    return neu.wiederholungen * neu.saetze > alt.wiederholungen * alt.saetze;
+  }
+  return false;
+}
+
+// Vergleicht aufeinanderfolgende Einträge DERSELBEN Übung.
+// Liefert: Anzahl Vergleiche, Anzahl Verbesserungen, längste Serie von Verbesserungen
+function analysiereEntwicklung(einheiten) {
+  const sortiert = sortiereChronologisch(einheiten);
+
+  // Einträge nach Übung sortieren (jede Übung nur mit sich selbst vergleichen)
+  const proUebung = {};
+  for (let i = 0; i < sortiert.length; i++) {
+    const name = sortiert[i].uebung;
+    if (!proUebung[name]) {
+      proUebung[name] = [];
+    }
+    proUebung[name].push(sortiert[i]);
+  }
+
+  let vergleiche = 0;
+  let verbesserungen = 0;
+  let laengsteSerie = 0;
+
+  const namen = Object.keys(proUebung);
+  for (let n = 0; n < namen.length; n++) {
+    const liste = proUebung[namen[n]];
+    let serie = 0;
+    for (let i = 1; i < liste.length; i++) {
+      vergleiche++;
+      if (istVerbesserung(liste[i - 1], liste[i])) {
+        verbesserungen++;
+        serie++;
+        if (serie > laengsteSerie) {
+          laengsteSerie = serie;
+        }
+      } else {
+        serie = 0;
+      }
+    }
+  }
+
+  return { vergleiche: vergleiche, verbesserungen: verbesserungen, laengsteSerie: laengsteSerie };
+}
+
+// 30 / 20 / 10 / 0 Punkte je nach Entwicklung
+function punkteEntwicklung(analyse) {
+  if (analyse.laengsteSerie >= 3) {
+    return 30;
+  }
+  let quote = 0;
+  if (analyse.vergleiche > 0) {
+    quote = analyse.verbesserungen / analyse.vergleiche;
+  }
+  if (analyse.verbesserungen >= 2 && quote >= 0.5) {
+    return 20;
+  }
+  if (analyse.verbesserungen >= 1) {
+    return 10;
+  }
+  return 0;
+}
+
+// ---------- Status und Farbe ----------
+function bestimmeStatus(score, hatTrainingsdaten) {
+  if (!hatTrainingsdaten) return { status: "Inactive", farbe: "Weiß" };
+  if (score <= 20) return { status: "Starter", farbe: "Rot" };
+  if (score <= 40) return { status: "Rising", farbe: "Orange" };
+  if (score <= 70) return { status: "Advanced", farbe: "Gelb" };
+  return { status: "Elite", farbe: "Grün" };
+}
+
+// Ergebnis für eine Muskelgruppe ohne Trainingsdaten
+function leereMuskelgruppe() {
+  return {
+    score: 0,
+    status: "Inactive",
+    farbe: "Weiß",
+    teilpunkte: { haeufigkeit: 0, relativeLeistung: 0, wiederholungen: 0, saetze: 0, entwicklung: 0 },
+    hinweis: null
+  };
+}
+
+// ---------- Hauptfunktion: Score einer Muskelgruppe ----------
+// einheiten: nur die Einheiten DIESER Muskelgruppe
+// koerpergewicht: Zahl oder null (wenn unbekannt)
+function berechneMuskelgruppe(einheiten, koerpergewicht, heute) {
+  if (einheiten.length === 0) {
+    return leereMuskelgruppe();
+  }
+
+  // 1. Trainingshäufigkeit (max. 20)
+  const trainingstage = zaehleTrainingstage(einheiten, heute);
+  const haeufigkeit = punkteNachAnteil(trainingstage, ZIEL_TRAININGSTAGE, MAX_HAEUFIGKEIT);
+
+  // 2. Relative Trainingsleistung (max. 20): höchstes Gewicht / Körpergewicht
+  let relativeLeistung = 0;
+  let hinweis = null;
+  if (typeof koerpergewicht === "number" && koerpergewicht > 0) {
+    const verhaeltnis = hoechsterWert(einheiten, "gewicht") / koerpergewicht;
+    relativeLeistung = punkteNachAnteil(verhaeltnis, ZIEL_VERHAELTNIS, MAX_RELATIVE_LEISTUNG);
+  } else {
+    hinweis = "Es ist kein Körpergewicht gespeichert. Die relative Trainingsleistung kann nicht berechnet werden " +
+              "(0 Punkte dafür). Die Trainingsdaten bleiben unverändert erhalten.";
+  }
+
+  // 3. Wiederholungen (max. 15): höchste Wiederholungszahl pro Satz
+  const wiederholungen = punkteNachAnteil(hoechsterWert(einheiten, "wiederholungen"), ZIEL_WIEDERHOLUNGEN, MAX_WIEDERHOLUNGEN);
+
+  // 4. Sätze (max. 15): höchste Satzzahl
+  const saetze = punkteNachAnteil(hoechsterWert(einheiten, "saetze"), ZIEL_SAETZE, MAX_SAETZE);
+
+  // 5. Entwicklung über die Zeit (max. 30)
+  const entwicklung = punkteEntwicklung(analysiereEntwicklung(einheiten));
+
+  // Gesamtscore: addieren, auf höchstens 100 begrenzen, kaufmännisch runden
+  let summe = haeufigkeit + relativeLeistung + wiederholungen + saetze + entwicklung;
+  if (summe > 100) {
+    summe = 100;
+  }
+  const score = Math.round(summe);
+
+  const statusInfo = bestimmeStatus(score, true);
+
+  return {
+    score: score,
+    status: statusInfo.status,
+    farbe: statusInfo.farbe,
+    teilpunkte: {
+      haeufigkeit: rundeEineStelle(haeufigkeit),
+      relativeLeistung: rundeEineStelle(relativeLeistung),
+      wiederholungen: rundeEineStelle(wiederholungen),
+      saetze: rundeEineStelle(saetze),
+      entwicklung: entwicklung
+    },
+    hinweis: hinweis
+  };
+}
+
+// ---------- Aktivitätslevel (aus der Anzahl der Übungen) ----------
+
+// Zählt, wie viele verschiedene Übungen an einem Tag absolviert wurden.
+// (Nicht verwechseln mit den Trainingstagen!)
+function zaehleUebungenAmTag(einheiten, datum) {
+  const schonGezaehlt = {};
+  let anzahl = 0;
+  for (let i = 0; i < einheiten.length; i++) {
+    if (einheiten[i].datum === datum) {
+      const schluessel = einheiten[i].muskelgruppe + "|" + einheiten[i].uebung;
+      if (!schonGezaehlt[schluessel]) {
+        schonGezaehlt[schluessel] = true;
+        anzahl++;
+      }
+    }
+  }
+  return anzahl;
+}
+
+// 0-2 Übungen: niedrig, 3-5: mittel, ab 6: hoch
+function bestimmeAktivitaetslevel(anzahlUebungen) {
+  if (anzahlUebungen <= 2) return "niedrig";
+  if (anzahlUebungen <= 5) return "mittel";
+  return "hoch";
+}
+
+
+/* ======================================================================
+   B. FESTE WERTE UND KLEINE HELFER
+   ====================================================================== */
+
+// Spätestes zulässiges Datum für ALLE Datumsfelder (Projektvorgabe).
+// Dieser Wert steht nur hier und wird überall verwendet.
+const LETZTES_ERLAUBTES_DATUM = "2020-12-31";
+
+// Die zehn Muskelgruppen kommen direkt aus dem Übungskatalog.
+const MUSKELGRUPPEN = Object.keys(uebungskatalog);
+
+// Grenzen der Eingabefelder (Projektvorgabe)
+const GRENZEN = {
+  alter: { min: 1, max: 100 },
+  groesse: { min: 120, max: 220 },
+  koerpergewicht: { min: 1, max: 540 },
+  trainingsgewicht: { min: 0, max: 540 },
+  saetze: { min: 0, max: 25 },
+  wiederholungen: { min: 0, max: 30 },
+  uebungenProTag: { min: 0, max: 8 }   // Bereich, den berechneErnaehrung() akzeptiert
+};
+
+const ZIEL_REIHENFOLGE = ["Abnehmen", "Muskelaufbau", "Zunehmen", "Gewicht halten"];
+const ZIEL_STANDARD = "Muskelaufbau";
+
+// Zuordnung Status (aus berechnung.js) -> CSS-Klasse der Farbe
+const STATUS_KLASSE = { Inactive: "inactive", Starter: "starter", Rising: "rising", Advanced: "advanced", Elite: "elite" };
+const STATUS_FARBE = { Inactive: "#ffffff", Starter: "#e8837c", Rising: "#f2b36a", Advanced: "#efd668", Elite: "#7fc592" };
+
+function $(id) { return document.getElementById(id); }
+
+// Verhindert, dass Eingaben als HTML interpretiert werden
+function esc(text) {
+  return String(text === null || text === undefined ? "" : text)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+// "2020-12-31" -> "31.12.2020"
+function datumAnzeige(iso) {
+  const teile = String(iso).split("-");
+  return teile.length === 3 ? teile[2] + "." + teile[1] + "." + teile[0] : String(iso);
+}
+
+// Zahl mit deutschem Komma, höchstens eine Nachkommastelle
+function zahlText(zahl) {
+  return Number(zahl).toLocaleString("de-DE", { maximumFractionDigits: 1 });
+}
+
+
+/* ======================================================================
+   C. ZENTRALE EINGABEPRÜFUNG (Validierung)
+   Jede Prüffunktion bekommt den ROHEN Text aus dem Eingabefeld und
+   liefert entweder { ok: true, wert: ... } oder { ok: false, fehler: "..." }.
+   Es wird zuerst das ganze Format geprüft, erst danach in eine Zahl umgewandelt.
+   Ungültige Werte werden nie stillschweigend zu 0.
+   ====================================================================== */
+
+function fehlerErgebnis(text) { return { ok: false, fehler: text }; }
+
+// Name: nur Buchstaben (inkl. Umlaute und andere Unicode-Buchstaben) und einzelne
+// Leerzeichen zwischen den Namensteilen. \p{L} = Buchstabe, \p{M} = Akzentzeichen.
+const NAME_MUSTER = /^(?:\p{L}\p{M}*)+(?: (?:\p{L}\p{M}*)+)*$/u;
+
+function pruefeName(roh) {
+  const text = String(roh === null || roh === undefined ? "" : roh).normalize("NFC").trim().replace(/\s+/g, " ");
+  if (text === "") return fehlerErgebnis("Bitte einen Namen eingeben.");
+  if (!NAME_MUSTER.test(text)) return fehlerErgebnis("Der Name darf nur Buchstaben und Leerzeichen zwischen den Namensteilen enthalten.");
+  return { ok: true, wert: text, text: text };
+}
+
+// Ganze Zahl in einem Bereich. Erlaubt sind nur Ziffern (kein Komma, kein Minus, kein Exponent).
+function pruefeGanzzahl(roh, min, max, pflicht, bezeichnung) {
+  const text = String(roh === null || roh === undefined ? "" : roh).trim();
+  if (text === "") {
+    return pflicht ? fehlerErgebnis("Bitte " + bezeichnung + " eingeben.") : { ok: true, wert: null, text: "" };
+  }
+  if (!/^\d+$/.test(text)) return fehlerErgebnis("Bitte eine ganze Zahl ohne Komma eingeben (" + min + " bis " + max + ").");
+  const zahl = Number(text);
+  if (!Number.isSafeInteger(zahl) || zahl < min || zahl > max) return fehlerErgebnis("Der Wert muss zwischen " + min + " und " + max + " liegen.");
+  return { ok: true, wert: zahl, text: String(zahl) };
+}
+
+// Dezimalzahl mit höchstens einer Nachkommastelle; Komma und Punkt sind erlaubt.
+function pruefeDezimal(roh, min, max, pflicht, bezeichnung, einheit) {
+  const text = String(roh === null || roh === undefined ? "" : roh).trim();
+  if (text === "") {
+    return pflicht ? fehlerErgebnis("Bitte " + bezeichnung + " eingeben.") : { ok: true, wert: null, text: "" };
+  }
+  if (/^\d+[.,]\d{2,}$/.test(text)) return fehlerErgebnis("Bitte höchstens eine Nachkommastelle angeben.");
+  if (!/^\d+(?:[.,]\d)?$/.test(text)) return fehlerErgebnis("Bitte eine Zahl eingeben, z. B. 72,5 (Komma oder Punkt).");
+  const zahl = parseFloat(text.replace(",", "."));
+  if (!isFinite(zahl) || zahl < min || zahl > max) return fehlerErgebnis("Der Wert muss zwischen " + zahlText(min) + " und " + zahlText(max) + " " + einheit + " liegen.");
+  return { ok: true, wert: zahl, text: zahlText(zahl) };
+}
+
+// Datum: "JJJJ-MM-TT" (Datumsfeld) oder "TT.MM.JJJJ". Prüft echten Kalendertag
+// (Schaltjahre!) und das späteste erlaubte Datum. istGueltigesDatum() stammt aus berechnung.js.
+function pruefeDatum(roh, pflicht, nichtLesbar) {
+  const text = String(roh === null || roh === undefined ? "" : roh).trim();
+  if (nichtLesbar) return fehlerErgebnis("Das Datum ist unvollständig oder ungültig.");
+  if (text === "") return pflicht ? fehlerErgebnis("Bitte ein Datum wählen.") : { ok: true, wert: null, text: "" };
+  let iso = null;
+  const deutsch = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(text);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    iso = text;
+  } else if (deutsch) {
+    iso = deutsch[3] + "-" + deutsch[2].padStart(2, "0") + "-" + deutsch[1].padStart(2, "0");
+  }
+  if (iso === null || iso.slice(0, 4) === "0000" || !istGueltigesDatum(iso)) {
+    return fehlerErgebnis("Bitte ein gültiges Datum eingeben (z. B. 29.02.2020).");
+  }
+  if (iso > LETZTES_ERLAUBTES_DATUM) {
+    return fehlerErgebnis("Das Datum darf nicht nach dem " + datumAnzeige(LETZTES_ERLAUBTES_DATUM) + " liegen.");
+  }
+  return { ok: true, wert: iso, text: iso };
+}
+
+// Eigene Übung: 2-40 Zeichen, Buchstaben/Ziffern/Leerzeichen/Bindestrich, mindestens ein Buchstabe,
+// darf in der Muskelgruppe noch nicht vorkommen.
+function pruefeEigeneUebung(roh, gruppe) {
+  const text = String(roh === null || roh === undefined ? "" : roh).normalize("NFC").trim().replace(/\s+/g, " ");
+  if (text === "") return fehlerErgebnis("Bitte einen Namen für die Übung eingeben.");
+  if (text.length < 2 || text.length > 40) return fehlerErgebnis("Der Name muss 2 bis 40 Zeichen lang sein.");
+  if (!/^[\p{L}\p{N}][\p{L}\p{N}\p{M} -]*$/u.test(text) || !/\p{L}/u.test(text)) {
+    return fehlerErgebnis("Erlaubt sind Buchstaben, Ziffern, Leerzeichen und Bindestriche (mindestens ein Buchstabe).");
+  }
+  if (gruppe) {
+    const vorhanden = holeUebungsnamen(gruppe);
+    for (let i = 0; i < vorhanden.length; i++) {
+      if (vorhanden[i].toLowerCase() === text.toLowerCase()) return fehlerErgebnis("Diese Übung gibt es in „" + gruppe + "“ schon.");
+    }
+  }
+  return { ok: true, wert: text, text: text };
+}
+
+// ---- Regelverzeichnis: Welches Feld (data-regel) wird womit geprüft? ----
+const FELD_REGELN = {
+  name: function (roh) { return pruefeName(roh); },
+  alter: function (roh) { return pruefeGanzzahl(roh, GRENZEN.alter.min, GRENZEN.alter.max, false, "das Alter"); },
+  groesse: function (roh) { return pruefeDezimal(roh, GRENZEN.groesse.min, GRENZEN.groesse.max, false, "die Körpergröße", "cm"); },
+  koerpergewicht: function (roh) { return pruefeDezimal(roh, GRENZEN.koerpergewicht.min, GRENZEN.koerpergewicht.max, false, "das Körpergewicht", "kg"); },
+  koerpergewichtPflicht: function (roh) { return pruefeDezimal(roh, GRENZEN.koerpergewicht.min, GRENZEN.koerpergewicht.max, true, "das Körpergewicht", "kg"); },
+  trainingsgewicht: function (roh) { return pruefeDezimal(roh, GRENZEN.trainingsgewicht.min, GRENZEN.trainingsgewicht.max, false, "das Gewicht", "kg"); },
+  saetze: function (roh) { return pruefeGanzzahl(roh, GRENZEN.saetze.min, GRENZEN.saetze.max, true, "die Anzahl der Sätze"); },
+  wiederholungen: function (roh) { return pruefeGanzzahl(roh, GRENZEN.wiederholungen.min, GRENZEN.wiederholungen.max, true, "die Anzahl der Wiederholungen"); },
+  uebungenProTag: function (roh) { return pruefeGanzzahl(roh, GRENZEN.uebungenProTag.min, GRENZEN.uebungenProTag.max, true, "die Anzahl der Übungen"); }
+};
+
+// Prüft EIN Eingabefeld, zeigt/entfernt die Fehlermeldung direkt am Feld und gibt das Ergebnis zurück.
+function pruefeFeld(feld) {
+  const regel = feld.dataset.regel;
+  let ergebnis;
+  if (regel === "datum" || regel === "datumOptional") {
+    ergebnis = pruefeDatum(feld.value, regel === "datum", feld.validity && feld.validity.badInput);
+  } else if (regel === "eigeneUebung") {
+    ergebnis = pruefeEigeneUebung(feld.value, zustand.training.gruppe);
+  } else if (FELD_REGELN[regel]) {
+    ergebnis = FELD_REGELN[regel](feld.value);
+  } else {
+    return { ok: true, wert: feld.value };
+  }
+  zeigeFeldFehler(feld, ergebnis.ok ? "" : ergebnis.fehler);
+  return ergebnis;
+}
+
+function zeigeFeldFehler(feld, text) {
+  const meldung = $(feld.id + "-fehler");
+  if (meldung) meldung.textContent = text;
+  feld.classList.toggle("ungueltig", text !== "");
+  if (text !== "") feld.setAttribute("aria-invalid", "true"); else feld.removeAttribute("aria-invalid");
+}
+
+// Prüft alle Felder mit data-regel in einem Bereich. Springt zum ersten Fehler.
+// Gibt { ok, werte: {feldId: wert} } zurück.
+function pruefeFormular(bereich) {
+  const felder = bereich.querySelectorAll("[data-regel]");
+  const werte = {};
+  let erstesFehlerfeld = null;
+  for (let i = 0; i < felder.length; i++) {
+    const ergebnis = pruefeFeld(felder[i]);
+    if (ergebnis.ok) {
+      werte[felder[i].id] = ergebnis.wert;
+      normalisiereFeld(felder[i], ergebnis);
+      if (typeof merkeFeldWert === "function") merkeFeldWert(felder[i]);
+    } else if (erstesFehlerfeld === null) {
+      erstesFehlerfeld = felder[i];
+    }
+  }
+  if (erstesFehlerfeld) erstesFehlerfeld.focus();
+  return { ok: erstesFehlerfeld === null, werte: werte };
+}
+
+// Nach dem Verlassen eines gültigen Feldes: Schreibweise vereinheitlichen (z. B. "167.5" -> "167,5")
+function normalisiereFeld(feld, ergebnis) {
+  if (ergebnis.ok && typeof ergebnis.text === "string" && feld.dataset.regel !== "datum" && feld.dataset.regel !== "datumOptional") {
+    if (feld.value !== ergebnis.text) feld.value = ergebnis.text;
+  }
+}
+
+
+/* ======================================================================
+   D. SPEICHERUNG (localStorage)
+   Entspricht den JSON-Dateien aus Node.js (trainingseinheiten.json, profil.json).
+   Kaputte gespeicherte Daten werden NIE überschrieben. Funktioniert localStorage
+   nicht, bleiben die Daten bis zum Schließen der Seite im Arbeitsspeicher.
+   ====================================================================== */
+
+const SCHLUESSEL = {
+  einheiten: "mamu_trainingseinheiten",
+  profil: "mamu_profil",
+  eigeneUebungen: "mamu_eigene_uebungen",
+  einstellungen: "mamu_einstellungen",
+  angaben: "mamu_angaben"
+};
+const arbeitsspeicher = {};
+const gesperrt = {};
+let speicherFunktioniert = true;
+const FEHLER_GESPERRT = "Die gespeicherten Daten konnten nicht gelesen werden. Es wurde nichts überschrieben.";
+
+function ladeWert(schluessel, standard) {
+  if (arbeitsspeicher[schluessel] !== undefined) return JSON.parse(arbeitsspeicher[schluessel]);
+  let text = null;
+  try { text = window.localStorage.getItem(schluessel); } catch (fehler) { speicherFunktioniert = false; }
+  if (text === null) return standard;
+  try {
+    return JSON.parse(text);
+  } catch (fehler) {
+    gesperrt[schluessel] = true;
+    return standard;
+  }
+}
+
+function speichereWert(schluessel, wert) {
+  if (gesperrt[schluessel]) return false;
+  const text = JSON.stringify(wert);
+  arbeitsspeicher[schluessel] = text;
+  try { window.localStorage.setItem(schluessel, text); } catch (fehler) { speicherFunktioniert = false; }
+  return true;
+}
+
+// ----- Trainingseinheiten -----
+
+// Ist ein gespeicherter Datensatz vollständig und gültig? (Alte oder kaputte Datensätze werden ignoriert, aber nicht gelöscht.)
+function istGueltigeEinheit(e) {
+  if (!e || typeof e !== "object") return false;
+  if (!Number.isSafeInteger(e.id) || e.id < 1) return false;
+  if (MUSKELGRUPPEN.indexOf(e.muskelgruppe) === -1) return false;
+  if (typeof e.uebung !== "string" || e.uebung.trim() === "") return false;
+  if (e.gewicht !== null && !(typeof e.gewicht === "number" && isFinite(e.gewicht) && e.gewicht >= GRENZEN.trainingsgewicht.min && e.gewicht <= GRENZEN.trainingsgewicht.max)) return false;
+  if (!Number.isInteger(e.wiederholungen) || e.wiederholungen < GRENZEN.wiederholungen.min || e.wiederholungen > GRENZEN.wiederholungen.max) return false;
+  if (!Number.isInteger(e.saetze) || e.saetze < GRENZEN.saetze.min || e.saetze > GRENZEN.saetze.max) return false;
+  if (typeof e.datum !== "string" || !istGueltigesDatum(e.datum) || e.datum > LETZTES_ERLAUBTES_DATUM) return false;
+  return true;
+}
+
+function leseRohdaten() {
+  const roh = ladeWert(SCHLUESSEL.einheiten, null);
+  if (roh === null) return { naechsteId: 1, einheiten: [] };
+  if (typeof roh !== "object" || !Array.isArray(roh.einheiten)) {
+    gesperrt[SCHLUESSEL.einheiten] = true;   // unbekanntes Format: nicht überschreiben
+    return { naechsteId: 1, einheiten: [] };
+  }
+  return roh;
+}
+
+// Liefert die gültigen Einheiten und zählt die ignorierten
+function ladeEinheiten() {
+  const roh = leseRohdaten();
+  const gueltig = roh.einheiten.filter(istGueltigeEinheit);
+  return { gueltig: gueltig, ignoriert: roh.einheiten.length - gueltig.length };
+}
+
+function holeAlleEinheiten() { return ladeEinheiten().gueltig; }
+
+// Speichert mehrere neue Einträge auf einmal. Prüft jeden Eintrag nochmals und lehnt exakte Duplikate ab.
+function speichereEinheiten(neue) {
+  const roh = leseRohdaten();
+  if (gesperrt[SCHLUESSEL.einheiten]) return fehlerErgebnis(FEHLER_GESPERRT);
+  let id = Number.isSafeInteger(roh.naechsteId) ? roh.naechsteId : 1;
+  roh.einheiten.forEach(function (e) { if (e && Number.isSafeInteger(e.id) && e.id >= id) id = e.id + 1; });
+  const hinzu = [];
+  for (let i = 0; i < neue.length; i++) {
+    const eintrag = { id: id + i, muskelgruppe: neue[i].muskelgruppe, uebung: neue[i].uebung, gewicht: neue[i].gewicht, wiederholungen: neue[i].wiederholungen, saetze: neue[i].saetze, datum: neue[i].datum };
+    if (!istGueltigeEinheit(eintrag) || holeUebungsnamen(eintrag.muskelgruppe).indexOf(eintrag.uebung) === -1) {
+      return fehlerErgebnis("Ein Eintrag ist ungültig und wurde nicht gespeichert.");
+    }
+    const doppelt = roh.einheiten.concat(hinzu).some(function (v) {
+      return v && v.muskelgruppe === eintrag.muskelgruppe && v.uebung === eintrag.uebung && v.datum === eintrag.datum &&
+        v.gewicht === eintrag.gewicht && v.wiederholungen === eintrag.wiederholungen && v.saetze === eintrag.saetze;
+    });
+    if (doppelt) return fehlerErgebnis("Ein identischer Eintrag („" + eintrag.uebung + "“ am " + datumAnzeige(eintrag.datum) + ") ist schon gespeichert.");
+    hinzu.push(eintrag);
+  }
+  roh.einheiten = roh.einheiten.concat(hinzu);
+  roh.naechsteId = id + hinzu.length;
+  if (!speichereWert(SCHLUESSEL.einheiten, roh)) return fehlerErgebnis(FEHLER_GESPERRT);
+  return { ok: true, anzahl: hinzu.length };
+}
+
+function loescheEinheiten(ids) {
+  const roh = leseRohdaten();
+  if (gesperrt[SCHLUESSEL.einheiten]) return false;
+  roh.einheiten = roh.einheiten.filter(function (e) { return !(e && ids.indexOf(e.id) !== -1); });
+  return speichereWert(SCHLUESSEL.einheiten, roh);
+}
+
+// ----- Profil: Körpergewicht -----
+function holeKoerpergewicht() {
+  const profil = ladeWert(SCHLUESSEL.profil, {});
+  const g = profil && profil.koerpergewicht;
+  return (typeof g === "number" && isFinite(g) && g >= GRENZEN.koerpergewicht.min && g <= GRENZEN.koerpergewicht.max) ? g : null;
+}
+function speichereKoerpergewicht(gewichtOderNull) { return speichereWert(SCHLUESSEL.profil, { koerpergewicht: gewichtOderNull }); }
+
+// ----- Persönliche Angaben (Name, Alter, Größe) -----
+function holeAngaben() {
+  const roh = ladeWert(SCHLUESSEL.angaben, {}) || {};
+  const name = pruefeName(roh.name);
+  const alter = pruefeGanzzahl(String(roh.alter === undefined || roh.alter === null ? "" : roh.alter), GRENZEN.alter.min, GRENZEN.alter.max, false, "");
+  const groesse = pruefeDezimal(String(roh.groesse === undefined || roh.groesse === null ? "" : roh.groesse), GRENZEN.groesse.min, GRENZEN.groesse.max, false, "", "cm");
+  return { name: name.ok ? name.wert : "", alter: alter.ok ? alter.wert : null, groesse: groesse.ok ? groesse.wert : null };
+}
+
+// ----- Einstellungen -----
+function holeEinstellungen() {
+  const roh = ladeWert(SCHLUESSEL.einstellungen, {}) || {};
+  return {
+    koerper: roh.koerper === "frau" ? "frau" : "mann",
+    trainingsziel: (typeof roh.trainingsziel === "string" && trainingsziele[roh.trainingsziel]) ? roh.trainingsziel : ZIEL_STANDARD
+  };
+}
+function speichereEinstellungen(teil) {
+  const neu = Object.assign(holeEinstellungen(), teil);
+  return speichereWert(SCHLUESSEL.einstellungen, neu);
+}
+
+// ----- Eigene Übungen -----
+function holeEigeneUebungen(gruppe) {
+  const alle = ladeWert(SCHLUESSEL.eigeneUebungen, {}) || {};
+  const liste = alle[gruppe];
+  return Array.isArray(liste) ? liste.filter(function (n) { return typeof n === "string" && n.trim() !== ""; }) : [];
+}
+function speichereEigeneUebung(gruppe, name) {
+  const alle = ladeWert(SCHLUESSEL.eigeneUebungen, {}) || {};
+  const liste = holeEigeneUebungen(gruppe);
+  liste.push(name);
+  alle[gruppe] = liste;
+  return speichereWert(SCHLUESSEL.eigeneUebungen, alle);
+}
+function loescheEigeneUebung(gruppe, name) {
+  const alle = ladeWert(SCHLUESSEL.eigeneUebungen, {}) || {};
+  alle[gruppe] = holeEigeneUebungen(gruppe).filter(function (n) { return n !== name; });
+  return speichereWert(SCHLUESSEL.eigeneUebungen, alle);
+}
+function holeKatalogNamen(gruppe) { return uebungskatalog[gruppe].map(function (u) { return u.name; }); }
+function holeUebungsnamen(gruppe) { return holeKatalogNamen(gruppe).concat(holeEigeneUebungen(gruppe)); }
+
+
+/* ======================================================================
+   E. DATENLOGIK: Scores, Status und Verlauf
+   Hier werden nur die vorhandenen Funktionen aus Abschnitt A aufgerufen.
+   ====================================================================== */
+
+// Die Berechnung kennt kein "leeres Gewicht": Für die Rechenfunktionen wird ein fehlendes
+// Gewicht (null) nur als Kopie zu 0 gemacht. Gespeichert bleibt null.
+function fuerBerechnung(einheiten) {
+  return einheiten.map(function (e) {
+    return { id: e.id, muskelgruppe: e.muskelgruppe, uebung: e.uebung, gewicht: e.gewicht === null ? 0 : e.gewicht, wiederholungen: e.wiederholungen, saetze: e.saetze, datum: e.datum };
+  });
+}
+
+// Bezugsdatum für "letzte 30 Tage": das echte heutige Datum
+function bezugsdatum() { return heutigesDatum(); }
+
+// Berechnet alle zehn Gruppen unabhängig voneinander
+function berechneAlleGruppen(einheiten, koerpergewicht) {
+  const heute = bezugsdatum();
+  const ergebnis = {};
+  MUSKELGRUPPEN.forEach(function (gruppe) {
+    const liste = einheiten.filter(function (e) { return e.muskelgruppe === gruppe; });
+    ergebnis[gruppe] = { einheiten: liste, hatDaten: liste.length > 0, ergebnis: berechneMuskelgruppe(fuerBerechnung(liste), koerpergewicht, heute) };
+  });
+  return ergebnis;
+}
+
+// Score einer Gruppe, wenn man nur Einträge bis einschließlich "bisDatum" kennt
+function scoreBis(liste, koerpergewicht, bisDatum) {
+  const teil = liste.filter(function (e) { return e.datum <= bisDatum; });
+  if (teil.length === 0) return null;
+  return berechneMuskelgruppe(fuerBerechnung(teil), koerpergewicht, bezugsdatum()).score;
+}
+
+// Verlauf: ein Punkt pro Trainingstag der Gruppe (Score mit allen Einträgen bis zu diesem Tag)
+function verlaufFuerGruppe(liste, koerpergewicht) {
+  const tage = [];
+  liste.forEach(function (e) { if (tage.indexOf(e.datum) === -1) tage.push(e.datum); });
+  tage.sort();
+  return tage.map(function (tag) { return { datum: tag, score: scoreBis(liste, koerpergewicht, tag) }; });
+}
+
+// Inactive wird nur für die Übungsempfehlung zu Starter (Projektvorgabe)
+function statusFuerEmpfehlung(status) { return status === "Inactive" ? "Starter" : status; }
+
+function gruppiereSitzungen(einheiten) {
+  const karte = {};
+  einheiten.forEach(function (e) {
+    const schluessel = e.datum + "|" + e.muskelgruppe;
+    if (!karte[schluessel]) karte[schluessel] = { datum: e.datum, muskelgruppe: e.muskelgruppe, eintraege: [] };
+    karte[schluessel].eintraege.push(e);
+  });
+  return Object.keys(karte).map(function (k) { return karte[k]; }).sort(function (a, b) {
+    if (a.datum !== b.datum) return a.datum < b.datum ? 1 : -1;
+    return a.muskelgruppe < b.muskelgruppe ? -1 : 1;
+  });
+}
+
+// ============================================================
+// F. KÖRPERANSICHT (SVG)
+// Alle Formen sind für die LINKE Körperhälfte (x < 100) gezeichnet und
+// werden an der Mittellinie x = 100 gespiegelt. So ist die Figur immer symmetrisch.
+// Erlaubt sind nur die Befehle M, L, C, Z mit absoluten "x,y"-Paaren.
+// ============================================================
+const KOERPER_BREITE = 200;
+const KOERPER_HOEHE = 444;
+const MUSKEL_PUNKTE = [ // Zuordnung Muskelgruppe -> Körperseite(n)
+  { gruppe: "Nacken", seiten: ["vorne", "hinten"] },
+  { gruppe: "Schultern", seiten: ["vorne", "hinten"] },
+  { gruppe: "Brust", seiten: ["vorne"] },
+  { gruppe: "Bizeps", seiten: ["vorne"] },
+  { gruppe: "Bauch", seiten: ["vorne"] },
+  { gruppe: "Rücken", seiten: ["hinten"] },
+  { gruppe: "Trizeps", seiten: ["hinten"] },
+  { gruppe: "Gesäß", seiten: ["hinten"] },
+  { gruppe: "Oberschenkel", seiten: ["vorne", "hinten"] },
+  { gruppe: "Waden", seiten: ["vorne", "hinten"] }
+];
+
+// ---- Silhouette (Haut): linke Hälfte, wird gespiegelt ----
+const RUMPF = "M100,68 L91,68 C83,69 74,72 66,77 L66,100 C67,118 70,132 71,148 C72,162 69,176 67,192 C65,206 65,222 68,238 L100,244 Z";
+const SILHOUETTE = {
+  kopf: "M100,8 C90,8 83,17 83,30 C83,43 90,53 100,53 Z",
+  ohr: "M83.5,28 C80,27 78.5,31 80,35 C81,38 83,37 83.5,35 Z",
+  hals: "M91,48 L91,66 C91,69 89,71 86,72 L100,77 L100,48 Z",
+  rumpfVorne: RUMPF,
+  rumpfHinten: RUMPF,
+  arm: "M68,74 C58,72 48,78 45.5,92 C44,106 42,120 40,134 C39,142 37,148 36.5,153 C35,166 31,181 26,193 C24.5,198 24,202 23.5,206 C20,214 18,223 19,231 C20,238 28,240 30,234 C31,228 33,218 35.5,209 C36.5,204 38,200 40,196 C45,183 49,171 52,159 C55,149 59,139 62,129 C64,119 66,109 67,100 Z",
+  bein: "M68,200 C65,215 63,232 63,248 C63,272 67,292 68,306 C69,314 68,320 66,328 C63,340 63,352 65,364 C68,378 71,392 72,404 C72,410 71,414 69,418 C66,424 64,430 68,434 L90,434 C95,430 94,424 92,418 C90,414 89,408 89,404 C90,388 93,372 94,356 C95,342 94,330 93,316 C94,302 96,284 98,264 C99,254 100,247 100,244 Z"
+};
+
+// ---- Muskelformen (linke Hälfte) ----
+const MUSKELFORMEN = {
+  vorne: {
+    Nacken: ["M91,50 L95,50 C96,58 98,64 100,70 L94,69 C92,64 91,58 91,50 Z"],
+    Schultern: ["M67,76 C58,73 49,79 46.5,92 C45.5,101 46.5,109 50,115 C56,113 62,109 66.5,102 C67.5,93 67.5,84 67,76 Z"],
+    Brust: ["M100,79 C88,77 77,79 69,84 C66,92 67,101 71,106 C78,114 90,116 100,112 Z"],
+    Bizeps: ["M47,118 C52,121 58,119 63,112 C62,125 60,139 56,152 C52,154 46,154 42,152 C43,140 44,129 47,118 Z"],
+    Bauch: ["M100,118 L85,118 C83,134 83,150 85,166 C87,176 93,184 100,192 Z", "M83,117 C77,122 73,134 73,150 C73,166 71,178 69,194 C75,194 81,190 85,184 C83,164 83,140 83,117 Z"],
+    Oberschenkel: ["M69,228 C65,244 63,262 64,278 C65,292 67,300 70,309 C74,315 84,315 90,309 C93,298 96,280 98,262 C100,252 100,246 100,240 C90,238 78,236 69,228 Z"],
+    Waden: ["M69,330 C66,344 66,358 69,376 C71,388 74,397 77,404 L87,404 C90,392 92,374 92,358 C92,346 92,334 91,324 C84,328 76,328 69,330 Z"]
+  },
+  hinten: {
+    Nacken: ["M91,50 L100,50 L100,96 C90,89 78,83 66,79 C74,75 83,71 89,68 C91,62 91,56 91,50 Z"],
+    Schultern: ["M67,76 C58,73 49,79 46.5,92 C45.5,101 46.5,109 50,115 C56,113 62,109 66.5,102 C67.5,93 67.5,84 67,76 Z"],
+    Rücken: ["M100,99 C90,93 80,90 69,88 C66,98 67,108 70,118 C72,132 74,146 76,160 C80,174 90,182 100,186 Z"],
+    Trizeps: ["M47,118 C52,121 58,119 63,112 C62,125 60,139 56,152 C52,154 46,154 42,152 C43,140 44,129 47,118 Z"],
+    Gesäß: ["M100,192 C90,188 80,190 70,196 C65,208 67,224 77,234 C87,240 96,238 100,234 Z"],
+    Oberschenkel: ["M69,240 C65,256 63,270 65,284 C66,294 68,302 70,309 C76,315 86,315 91,309 C94,298 97,278 98,260 C100,252 100,247 100,244 C90,246 78,246 69,240 Z"],
+    Waden: ["M66,320 C62,334 62,348 66,364 C69,374 73,382 77,390 L88,390 C93,378 95,362 95,348 C95,336 94,326 92,318 C84,322 74,322 66,320 Z"]
+  }
+};
+
+// Feine Linien (nur Zierde, nicht klickbar)
+const DETAIL_LINIEN = {
+  vorne: ["M100,70 L100,196", "M100,134 L86,134", "M100,152 L86,152", "M100,169 L88,169", "M70,81 C76,78 86,77 98,78", "M79,248 C77,268 77,290 81,308", "M82,332 C82,354 82,382 83,402"],
+  hinten: ["M100,60 L100,238", "M100,102 C92,108 84,114 78,124", "M100,160 C92,162 84,164 78,166", "M81,254 C81,274 81,294 83,309", "M82,326 C82,348 82,368 82,388"]
+};
+
+// Position der Punktzahl im Körperbild (x, y) je Seite
+const SCORE_POSITION = {
+  vorne: { Nacken: [100, 60], Schultern: [58, 92], Brust: [100, 98], Bizeps: [52, 136], Bauch: [100, 154], Oberschenkel: [84, 268], Waden: [80, 362] },
+  hinten: { Nacken: [100, 80], Schultern: [58, 92], Rücken: [100, 134], Trizeps: [52, 136], Gesäß: [100, 212], Oberschenkel: [84, 270], Waden: [80, 350] }
+};
+
+// Breitenfaktor für die weibliche Figur (y -> Faktor). Die Mittellinie bleibt fest.
+const WEIBLICH_STUETZPUNKTE = [[0, 1], [70, 0.9], [100, 0.88], [150, 0.82], [190, 1.0], [218, 1.13], [255, 1.07], [310, 1], [440, 1]];
+function breitenfaktor(y) {
+  const p = WEIBLICH_STUETZPUNKTE;
+  for (let i = 1; i < p.length; i++) {
+    if (y <= p[i][0]) {
+      const t = (y - p[i - 1][0]) / (p[i][0] - p[i - 1][0]);
+      return p[i - 1][1] + t * (p[i][1] - p[i - 1][1]);
+    }
+  }
+  return 1;
+}
+function weiblichFormen(d) {
+  return d.replace(/(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g, function (_, x, y) {
+    const neuX = 100 + (parseFloat(x) - 100) * breitenfaktor(parseFloat(y));
+    return Math.round(neuX * 100) / 100 + "," + y;
+  });
+}
+
+function spiegeln(d, klasse, extra) {
+  const a = '<path class="' + klasse + '" d="' + d + '"' + (extra || "") + "/>";
+  const b = '<path class="' + klasse + '" d="' + d + '" transform="matrix(-1 0 0 1 200 0)"' + (extra || "") + "/>";
+  return a + b;
+}
+
+// Baut das komplette SVG für eine Körperseite
+function baueKoerperSvg(seite, geschlecht, status, auswahl, scoreText, idPrefix) {
+  const f = geschlecht === "weiblich" ? weiblichFormen : function (d) { return d; };
+  const gradId = idPrefix + "-haut";
+  const rumpf = seite === "vorne" ? SILHOUETTE.rumpfVorne : SILHOUETTE.rumpfHinten;
+  const teile = [SILHOUETTE.bein, rumpf, SILHOUETTE.arm, SILHOUETTE.hals].map(f);
+  const kopf = SILHOUETTE.kopf;
+  let svg = '<svg class="koerper-svg" viewBox="0 0 ' + KOERPER_BREITE + " " + KOERPER_HOEHE + '" width="230" height="511" role="group" aria-label="Körper, ' + (seite === "vorne" ? "Vorderansicht" : "Rückansicht") + '" focusable="false">';
+  svg += '<defs><linearGradient id="' + gradId + '" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e7cfb9"/><stop offset="0.5" stop-color="#f4e5d6"/><stop offset="1" stop-color="#e7cfb9"/></linearGradient><linearGradient id="' + idPrefix + '-licht" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0.32"/><stop offset="0.55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.14"/></linearGradient></defs>';
+  // 1) Umrisse (dicke Linie unter allen Flächen)
+  let umriss = "", flaechen = "";
+  teile.forEach(function (d) { umriss += spiegeln(d, "haut-umriss"); flaechen += spiegeln(d, "haut-flaeche", ' fill="url(#' + gradId + ')"'); });
+  [kopf, SILHOUETTE.ohr].forEach(function (d) { umriss += spiegeln(d, "haut-umriss"); flaechen += spiegeln(d, "haut-flaeche", ' fill="url(#' + gradId + ')"'); });
+  svg += '<g aria-hidden="true">' + umriss + flaechen + "</g>";
+  // 2) Muskeln
+  const formen = MUSKELFORMEN[seite];
+  Object.keys(formen).forEach(function (gruppe) {
+    const klasse = "status-" + (status[gruppe] || "inactive");
+    svg += '<g class="muskel ' + klasse + '" data-gruppe="' + gruppe + '" role="button" tabindex="0" aria-label="' + gruppe + '" aria-pressed="' + (auswahl === gruppe) + '">';
+    formen[gruppe].forEach(function (d) { svg += spiegeln(f(d), "muskel-form"); });
+    formen[gruppe].forEach(function (d) { svg += spiegeln(f(d), "muskel-licht", ' fill="url(#' + idPrefix + '-licht)"'); });
+    svg += "</g>";
+  });
+  // 3) Zierlinien
+  svg += '<g class="detail" aria-hidden="true">';
+  DETAIL_LINIEN[seite].forEach(function (d) { svg += spiegeln(f(d), "detail-linie"); });
+  svg += "</g>";
+  // 4) Auswahlrand + Punktzahl
+  if (auswahl && formen[auswahl]) {
+    svg += '<g class="auswahl-rand" aria-hidden="true">';
+    formen[auswahl].forEach(function (d) { svg += spiegeln(f(d), "auswahl-pfad"); });
+    svg += "</g>";
+    if (scoreText && SCORE_POSITION[seite][auswahl]) {
+      const pos = SCORE_POSITION[seite][auswahl];
+      svg += '<g class="score-label" aria-hidden="true"><rect x="' + (pos[0] - 24) + '" y="' + (pos[1] - 9) + '" width="48" height="18" rx="9"/><text x="' + pos[0] + '" y="' + (pos[1] + 4) + '" text-anchor="middle">' + scoreText + "</text></g>";
+    }
+  }
+  svg += "</svg>";
+  return svg;
+}
+
+
+/* ======================================================================
+   G. ZUSTAND, KÖRPERANSICHT UND MUSKELPROFIL
+   ====================================================================== */
+
+// Alles, was sich während der Nutzung ändert, steht in diesem einen Objekt.
+const zustand = {
+  bereich: "koerper",
+  seite: "vorne",            // sichtbare Körperseite (Handy)
+  geschlecht: "mann",
+  auswahl: null,             // ausgewählte Muskelgruppe (null = keine)
+  zuletztGewaehlt: null,
+  training: { schritt: 0, gruppe: null, uebungen: [], felder: {}, datum: "" },
+  statistik: { von: "", bis: "", gruppe: "", angepasst: false },
+  eingaben: {},              // zwischengespeicherte Eingaben (Ernährung, Mehr)
+  ernaehrung: { ergebnis: null, gewicht: null, uebungen: "", ziel: null },
+  speichertGerade: false,    // Schutz gegen doppeltes Speichern
+  klickSperreBis: 0
+};
+
+// Zwischenspeicher für die aktuell berechneten Daten
+let daten = null;
+function aktualisiereDaten() {
+  const geladen = ladeEinheiten();
+  const koerpergewicht = holeKoerpergewicht();
+  daten = { einheiten: geladen.gueltig, ignoriert: geladen.ignoriert, kg: koerpergewicht, gruppen: berechneAlleGruppen(geladen.gueltig, koerpergewicht) };
+}
+
+function istHandyLayout() { return window.matchMedia("(max-width: 999px)").matches; }
+
+function renderKoerper() {
+  const status = {};
+  MUSKELGRUPPEN.forEach(function (g) { status[g] = STATUS_KLASSE[daten.gruppen[g].ergebnis.status]; });
+  let scoreText = "";
+  if (zustand.auswahl && daten.gruppen[zustand.auswahl].hatDaten) scoreText = daten.gruppen[zustand.auswahl].ergebnis.score + "/100";
+  ["vorne", "hinten"].forEach(function (seite) {
+    const platz = document.querySelector('.koerper-seite[data-seite="' + seite + '"] .svg-platz');
+    platz.innerHTML = baueKoerperSvg(seite, zustand.geschlecht === "frau" ? "weiblich" : "maennlich", status, zustand.auswahl, scoreText, "k-" + seite);
+  });
+  $("koerper-bereich").dataset.aktiv = zustand.seite;
+  document.querySelectorAll('[data-aktion="geschlecht"]').forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.wert === zustand.geschlecht)); });
+  document.querySelectorAll('[data-aktion="seite"]').forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.wert === zustand.seite)); });
+  $("legende").innerHTML =
+    legendenPunkt("Inactive", "Keine Daten") + legendenPunkt("Starter", "Starter 1–20") + legendenPunkt("Rising", "Rising 21–40") +
+    legendenPunkt("Advanced", "Advanced 41–70") + legendenPunkt("Elite", "Elite 71–100");
+  renderProfil();
+}
+
+function legendenPunkt(status, text) {
+  return '<li><span class="farbpunkt" style="background:' + STATUS_FARBE[status] + '"></span>' + text + "</li>";
+}
+
+function waehleMuskelgruppe(gruppe, seite) {
+  zustand.auswahl = gruppe;
+  zustand.zuletztGewaehlt = gruppe;
+  if (seite) zustand.seite = seite;
+  renderKoerper();
+  if (istHandyLayout()) {
+    $("profil-titel").focus();
+    $("profil").scrollTop = 0;
+  } else {
+    fokussiereMuskel(gruppe);
+  }
+}
+
+function schliesseProfil() {
+  const vorher = zustand.zuletztGewaehlt;
+  zustand.auswahl = null;      // Körperseite bleibt, die Auswahl wird zurückgesetzt
+  renderKoerper();
+  if (vorher) fokussiereMuskel(vorher);
+}
+
+function fokussiereMuskel(gruppe) {
+  const el = document.querySelector('.koerper-seite[data-seite="' + zustand.seite + '"] .muskel[data-gruppe="' + gruppe + '"]') || document.querySelector('.muskel[data-gruppe="' + gruppe + '"]');
+  if (el) el.focus({ preventScroll: true });
+}
+
+// ---------- Liniendiagramm (reines SVG, ohne Bibliothek) ----------
+function liniendiagrammSvg(punkte, beschreibung) {
+  const b = 320, h = 170, links = 32, rechts = 14, oben = 16, unten = 30;
+  const nutzbarB = b - links - rechts, nutzbarH = h - oben - unten;
+  function xPos(i) { return links + (punkte.length === 1 ? nutzbarB / 2 : (i / (punkte.length - 1)) * nutzbarB); }
+  function yPos(wert) { return oben + nutzbarH - (wert / 100) * nutzbarH; }
+  let svg = '<svg class="diagramm" viewBox="0 0 ' + b + " " + h + '" role="img" aria-label="' + esc(beschreibung) + '">';
+  [0, 50, 100].forEach(function (wert) {
+    svg += '<line class="gitter" x1="' + links + '" x2="' + (b - rechts) + '" y1="' + yPos(wert) + '" y2="' + yPos(wert) + '"/><text x="' + (links - 6) + '" y="' + (yPos(wert) + 4) + '" text-anchor="end">' + wert + "</text>";
+  });
+  let linie = "";
+  punkte.forEach(function (p, i) { linie += (i === 0 ? "M" : "L") + xPos(i).toFixed(1) + "," + yPos(p.score).toFixed(1) + " "; });
+  svg += '<path class="linie" d="' + linie + '"/>';
+  punkte.forEach(function (p, i) {
+    const letzter = i === punkte.length - 1;
+    svg += '<circle class="punkt' + (letzter ? " aktuell" : "") + '" cx="' + xPos(i).toFixed(1) + '" cy="' + yPos(p.score).toFixed(1) + '" r="' + (letzter ? 5 : 3.5) + '"><title>' + datumAnzeige(p.datum) + ": " + p.score + " Punkte</title></circle>";
+  });
+  const letzterPunkt = punkte[punkte.length - 1];
+  svg += '<text x="' + xPos(punkte.length - 1) + '" y="' + (yPos(letzterPunkt.score) - 10) + '" text-anchor="end" style="font-weight:700;fill:#1f2a24">' + letzterPunkt.score + "</text>";
+  svg += '<text x="' + links + '" y="' + (h - 8) + '" text-anchor="start">' + datumAnzeige(punkte[0].datum) + '</text><text x="' + (b - rechts) + '" y="' + (h - 8) + '" text-anchor="end">' + datumAnzeige(letzterPunkt.datum) + "</text>";
+  return svg + "</svg>";
+}
+
+function ringSvg(score, status) {
+  const umfang = 2 * Math.PI * 42;
+  return '<svg class="ring" viewBox="0 0 110 110" role="img" aria-label="Score ' + score + ' von 100"><circle class="ring-hintergrund" cx="55" cy="55" r="42"/>' +
+    '<circle class="ring-wert" cx="55" cy="55" r="42" stroke="' + STATUS_FARBE[status] + '" stroke-dasharray="' + (umfang * score / 100).toFixed(1) + " " + umfang.toFixed(1) + '"/>' +
+    '<text class="ring-zahl" x="55" y="58">' + score + '</text><text class="ring-klein" x="55" y="74">von 100</text></svg>';
+}
+
+function kennzahlHtml(name, wert, punkte) {
+  return '<div class="kennzahl"><div class="name">' + name + '</div><div class="wert">' + wert + '</div><div class="punkte">' + punkte + "</div></div>";
+}
+
+function renderProfil() {
+  const el = $("profil");
+  const gruppe = zustand.auswahl;
+  if (!gruppe) {
+    el.classList.remove("offen");
+    el.innerHTML = '<div class="profil-leer"><p><strong>Muskelprofil</strong></p><p>Wähle eine Muskelgruppe im Körperbild aus, um Score, Entwicklung und Übungsempfehlungen zu sehen.</p></div>';
+    return;
+  }
+  el.classList.add("offen");
+  const d = daten.gruppen[gruppe];
+  const erg = d.ergebnis;
+  let html = '<div class="profil-innen"><div class="profil-kopf"><button type="button" class="knopf rund" data-aktion="profil-zurueck" aria-label="Zurück zur Körperansicht">' +
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>' +
+    '<h2 id="profil-titel" tabindex="-1">' + esc(gruppe) + "</h2></div>";
+
+  if (!d.hatDaten) {
+    html += '<div class="karte leer-zustand"><h3>Noch keine Daten</h3><p>Für diese Muskelgruppe wurde noch kein Training gespeichert.</p>' +
+      '<button type="button" class="knopf primaer" data-aktion="erstes-training" data-gruppe="' + esc(gruppe) + '">Erstes Training hinzufügen</button></div>';
+  } else {
+    const berechnungsListe = fuerBerechnung(d.einheiten);
+    const tage = zaehleTrainingstage(berechnungsListe, bezugsdatum());
+    const hoechstesGewicht = hoechsterWert(berechnungsListe, "gewicht");
+    const t = erg.teilpunkte;
+    html += '<div class="karte"><div class="score-bereich">' + ringSvg(erg.score, erg.status) +
+      '<div><div class="leise">Trainings-Score</div><span class="status-plakette ' + STATUS_KLASSE[erg.status] + '">' + erg.status + "</span></div></div></div>";
+    if (erg.hinweis) {
+      html += '<div class="meldung warnung">Es ist noch kein Körpergewicht gespeichert. Die relative Trainingsleistung kann deshalb nicht berechnet werden. ' +
+        '<button type="button" class="knopf klein" data-aktion="bereich" data-wert="mehr">Körpergewicht eintragen</button></div>';
+    }
+    html += '<div class="karte"><h2>Kennzahlen</h2><div class="kennzahlen">' +
+      kennzahlHtml("Trainingshäufigkeit", tage + " von " + ZIEL_TRAININGSTAGE + " Tagen", "letzte " + BETRACHTETE_TAGE + " Tage · " + zahlText(t.haeufigkeit) + " / " + MAX_HAEUFIGKEIT + " Punkte") +
+      kennzahlHtml("Relative Leistung", daten.kg ? (hoechstesGewicht / daten.kg).toLocaleString("de-DE", { maximumFractionDigits: 2 }) + " × Körpergewicht" : "nicht berechenbar", "höchstes Gewicht · " + zahlText(t.relativeLeistung) + " / " + MAX_RELATIVE_LEISTUNG + " Punkte") +
+      kennzahlHtml("Wiederholungen", hoechsterWert(berechnungsListe, "wiederholungen") + " pro Satz", "Höchstwert · " + zahlText(t.wiederholungen) + " / " + MAX_WIEDERHOLUNGEN + " Punkte") +
+      kennzahlHtml("Sätze", String(hoechsterWert(berechnungsListe, "saetze")), "Höchstwert · " + zahlText(t.saetze) + " / " + MAX_SAETZE + " Punkte") +
+      "</div></div>";
+    // Entwicklung über die Zeit
+    const verlauf = verlaufFuerGruppe(d.einheiten, daten.kg);
+    html += '<div class="karte"><h2>Entwicklung</h2>';
+    if (verlauf.length < 2) {
+      html += '<p class="leise">Noch kein Verlauf: Für das Liniendiagramm werden Einträge von mindestens zwei Trainingstagen benötigt.</p>' +
+        '<div class="vergleich"><div><div class="name">Aktuell</div><div class="wert">' + erg.score + "</div></div><div><div class=\"name\">Vorher</div><div class=\"wert\">–</div></div><div><div class=\"name\">Veränderung</div><div class=\"wert\">–</div></div></div>";
+    } else {
+      const aktuell = verlauf[verlauf.length - 1].score, vorher = verlauf[verlauf.length - 2].score;
+      let veraenderung = "–";
+      if (vorher > 0) {
+        const prozent = Math.round((aktuell - vorher) / vorher * 1000) / 10;
+        veraenderung = (prozent > 0 ? "+" : "") + prozent.toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " %";
+      }
+      html += liniendiagrammSvg(verlauf, "Verlauf des Scores von " + gruppe + ": " + verlauf.map(function (p) { return datumAnzeige(p.datum) + " " + p.score; }).join(", ")) +
+        '<div class="vergleich"><div><div class="name">Aktueller Score</div><div class="wert">' + aktuell + '</div></div><div><div class="name">Vorheriger Score</div><div class="wert">' + vorher +
+        '</div></div><div><div class="name">Veränderung</div><div class="wert">' + veraenderung + "</div></div></div>";
+    }
+    html += '<p class="leise" style="margin-top:8px">Entwicklungspunkte (Verbesserungen bei gleichen Übungen): ' + t.entwicklung + " / 30</p></div>";
+  }
+
+  // Übungsempfehlungen (Ziel aus den Einstellungen, Status aus dem Score)
+  const ziel = holeEinstellungen().trainingsziel;
+  const empfehlung = waehleUebungen(gruppe, ziel, statusFuerEmpfehlung(erg.status));
+  html += '<div class="karte"><h2>Übungsempfehlungen</h2>';
+  if (!empfehlung.ok) {
+    html += '<div class="meldung fehler">' + esc(empfehlung.fehler) + "</div>";
+  } else {
+    html += '<p class="leise">Trainingsziel: ' + esc(empfehlung.trainingsziel) + " · Status: " + esc(d.hatDaten ? erg.status : "noch keine Daten (Starter-Empfehlung)") + '</p><div class="empfehlungen">';
+    empfehlung.uebungen.forEach(function (u) {
+      html += '<div class="uebungskarte"><div class="uebungsbild" role="img" aria-label="Platzhalterbild"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6M6 7v10M18 7v10M21 9v6M6 12h12"/></svg></div><div><div class="titel">' + esc(u.name) +
+        '</div><div class="info">Beanspruchte Muskelgruppe: ' + esc(gruppe) + '</div><div class="info"><strong>' + u.saetze + " Sätze · " + esc(u.wiederholungen) + " Wiederholungen</strong></div></div></div>";
+    });
+    html += "</div>";
+    if (empfehlung.hinweis) html += '<div class="meldung warnung" style="margin-top:10px">' + esc(empfehlung.hinweis) + "</div>";
+  }
+  html += "</div></div>";
+  el.innerHTML = html;
+}
+
+
+/* ======================================================================
+   H. TRAINING: Übersicht und Erfassung in vier Schritten
+   1 Muskelgruppe  ->  2 Übungen  ->  3 Sätze/Wiederholungen/Gewicht  ->  4 Speichern
+   Die Eingabefelder eines Schrittes werden nur beim Schrittwechsel neu aufgebaut,
+   nie während des Tippens (so gehen Eingaben und Fokus nicht verloren).
+   ====================================================================== */
+
+function renderTrainingUebersicht() {
+  const einheiten = daten.einheiten;
+  const heute = bezugsdatum();
+  const tage30 = zaehleTrainingstage(fuerBerechnung(einheiten), heute);
+  // Anzahl verschiedener Trainingstage insgesamt
+  const verschiedeneTage = {};
+  einheiten.forEach(function (e) { verschiedeneTage[e.datum] = true; });
+  let html = '<div class="kennzahl-zeile"><div class="kennzahl"><div class="name">Trainingstage insgesamt</div><div class="wert">' + Object.keys(verschiedeneTage).length +
+    '</div></div><div class="kennzahl"><div class="name">Trainingshäufigkeit</div><div class="wert">' + tage30 + ' von ' + ZIEL_TRAININGSTAGE + '</div><div class="punkte">Tage in den letzten ' + BETRACHTETE_TAGE + ' Tagen</div></div></div>';
+  html += '<button type="button" class="knopf primaer breit" data-aktion="training-starten">Training starten</button>';
+  html += '<div class="karte" style="margin-top:14px"><h2>Zuletzt absolviert</h2>';
+  const sitzungen = gruppiereSitzungen(einheiten).slice(0, 10);
+  if (sitzungen.length === 0) {
+    html += '<div class="leer-zustand"><p>Noch keine Trainingseinheiten gespeichert.</p></div>';
+  } else {
+    sitzungen.forEach(function (s) {
+      const ids = s.eintraege.map(function (e) { return e.id; }).join(",");
+      html += '<div class="sitzung"><div class="sitzung-kopf"><strong>' + esc(s.muskelgruppe) + '</strong><span class="leise">' + datumAnzeige(s.datum) + '</span></div><ul>';
+      s.eintraege.forEach(function (e) {
+        html += "<li>" + esc(e.uebung) + ": " + e.saetze + " × " + e.wiederholungen + (e.gewicht === null ? ", ohne Gewichtsangabe" : ", " + zahlText(e.gewicht) + " kg") + "</li>";
+      });
+      html += '</ul><button type="button" class="knopf gefahr klein" style="margin-top:8px" data-aktion="sitzung-loeschen" data-ids="' + ids + '" aria-label="Einheit ' + esc(s.muskelgruppe) + " vom " + datumAnzeige(s.datum) + ' löschen">Löschen</button></div>';
+    });
+  }
+  html += "</div>";
+  $("training-uebersicht").innerHTML = html;
+}
+
+function zeigeTrainingUebersicht() {
+  $("training-wizard").hidden = true;
+  $("training-uebersicht").hidden = false;
+  zustand.training = { schritt: 0, gruppe: null, uebungen: [], felder: {}, datum: "" };
+  renderTrainingUebersicht();
+}
+
+function starteTraining(gruppe) {
+  zustand.training = { schritt: gruppe ? 2 : 1, gruppe: gruppe || null, uebungen: [], felder: {}, datum: "" };
+  $("training-uebersicht").hidden = true;
+  $("training-wizard").hidden = false;
+  renderWizard();
+}
+
+function schrittAnzeige(schritt, titel) {
+  let balken = '<div class="schritte" aria-hidden="true">';
+  for (let i = 1; i <= 4; i++) balken += '<span class="' + (i < schritt ? "fertig" : i === schritt ? "aktiv" : "") + '"></span>';
+  return balken + '</div><p class="leise">Schritt ' + schritt + " von 4</p><h2 id=\"wizard-titel\" tabindex=\"-1\">" + titel + "</h2>";
+}
+
+function renderWizard(meldung) {
+  const t = zustand.training;
+  const el = $("training-wizard");
+  let html = '<div class="karte">';
+  if (t.schritt === 1) {
+    html += schrittAnzeige(1, "Muskelgruppe wählen") + '<div class="gruppenraster" role="group" aria-label="Muskelgruppen">';
+    MUSKELGRUPPEN.forEach(function (g) {
+      html += '<button type="button" class="gruppenknopf" data-aktion="wizard-gruppe" data-gruppe="' + esc(g) + '" aria-pressed="' + (t.gruppe === g) + '">' + esc(g) + "</button>";
+    });
+    html += "</div>";
+  } else if (t.schritt === 2) {
+    html += schrittAnzeige(2, "Übungen für „" + esc(t.gruppe) + "“") + '<p class="leise">Wähle eine oder mehrere Übungen aus dem Katalog oder lege eine eigene Übung an.</p><div class="chip-liste">';
+    holeKatalogNamen(t.gruppe).forEach(function (name, i) {
+      html += '<button type="button" class="chip" data-aktion="wizard-uebung" data-name="' + esc(name) + '" aria-pressed="' + (t.uebungen.indexOf(name) !== -1) + '"><span class="haken"></span><span><span class="chip-name">' + esc(name) +
+        '</span><span class="chip-text">' + esc(uebungskatalog[t.gruppe][i].beschreibung) + "</span></span></button>";
+    });
+    holeEigeneUebungen(t.gruppe).forEach(function (name) {
+      html += '<div style="display:flex;gap:8px;align-items:stretch"><button type="button" class="chip" data-aktion="wizard-uebung" data-name="' + esc(name) + '" aria-pressed="' + (t.uebungen.indexOf(name) !== -1) +
+        '"><span class="haken"></span><span><span class="chip-name">' + esc(name) + '</span><span class="chip-text">Eigene Übung</span></span></button>' +
+        '<button type="button" class="knopf gefahr klein" style="align-self:center" data-aktion="eigene-loeschen" data-name="' + esc(name) + '" aria-label="Eigene Übung ' + esc(name) + ' löschen">Löschen</button></div>';
+    });
+    html += '</div><form id="eigene-form" novalidate style="margin-top:16px"><div class="feld"><label class="feld-name" for="e-name">Eigene Übung erstellen</label>' +
+      '<input type="text" id="e-name" data-regel="eigeneUebung" autocomplete="off" aria-describedby="e-name-fehler" placeholder="z. B. Kabel-Flys">' +
+      '<div id="e-name-fehler" class="fehlertext" role="alert"></div></div><button type="submit" class="knopf">Übung speichern</button></form>';
+  } else if (t.schritt === 3) {
+    html += '<form id="wizard-form" novalidate>' + schrittAnzeige(3, "Sätze, Wiederholungen und Gewicht") +
+      '<div class="feld"><label class="feld-name" for="t-datum">Datum des Trainings</label>' +
+      '<input type="date" id="t-datum" data-regel="datum" required aria-required="true" max="' + LETZTES_ERLAUBTES_DATUM + '" value="' + esc(t.felder["t-datum"] || "") + '" aria-describedby="t-datum-fehler t-datum-hilfe">' +
+      '<div id="t-datum-hilfe" class="hilfetext">Spätestes erlaubtes Datum: ' + datumAnzeige(LETZTES_ERLAUBTES_DATUM) + "</div><div id=\"t-datum-fehler\" class=\"fehlertext\" role=\"alert\"></div></div>";
+    t.uebungen.forEach(function (name, i) {
+      html += '<fieldset class="eingabe-uebung" style="margin-inline:0"><legend><strong>' + esc(name) + "</strong></legend><div class=\"feld-reihe\">" +
+        feldHtml("t-saetze-" + i, "Sätze", "saetze", "numeric", "[0-9]+", true, t.felder["t-saetze-" + i]) +
+        feldHtml("t-wdh-" + i, "Wiederholungen", "wiederholungen", "numeric", "[0-9]+", true, t.felder["t-wdh-" + i]) +
+        feldHtml("t-gewicht-" + i, 'Gewicht (kg) <span class="zusatz">optional</span>', "trainingsgewicht", "decimal", "[0-9]+([.,][0-9])?", false, t.felder["t-gewicht-" + i]) +
+        '</div><p class="hilfetext">Gewicht leer lassen, wenn keines verwendet wurde. Es wird dann nicht als 0 kg gespeichert.</p></fieldset>';
+    });
+  } else if (t.schritt === 4) {
+    html += schrittAnzeige(4, "Zusammenfassung") + '<p>Muskelgruppe: <strong>' + esc(t.gruppe) + "</strong> · Datum: <strong>" + esc(datumAnzeige(t.felder["t-datum"])) + "</strong></p><ul>";
+    t.uebungen.forEach(function (name, i) {
+      const g = t.felder["t-gewicht-" + i];
+      html += "<li><strong>" + esc(name) + "</strong>: " + esc(t.felder["t-saetze-" + i]) + " Sätze × " + esc(t.felder["t-wdh-" + i]) + " Wdh., " + (String(g || "").trim() === "" ? "ohne Gewichtsangabe" : esc(g) + " kg") + "</li>";
+    });
+    html += "</ul>";
+  }
+  if (meldung) html += '<div class="meldung fehler" role="alert">' + esc(meldung) + "</div>";
+  // Knopfleiste je Schritt
+  if (t.schritt === 1) {
+    html += '<div class="knopf-reihe"><button type="button" class="knopf" data-aktion="wizard-abbrechen">Abbrechen</button><button type="button" class="knopf primaer" data-aktion="wizard-weiter">Weiter</button></div>';
+  } else if (t.schritt === 2) {
+    html += '<div class="knopf-reihe"><button type="button" class="knopf" data-aktion="wizard-zurueck">Zurück</button><button type="button" class="knopf primaer" data-aktion="wizard-weiter">Weiter</button></div>';
+  } else if (t.schritt === 3) {
+    html += '<div class="knopf-reihe"><button type="button" class="knopf" data-aktion="wizard-zurueck">Zurück</button><button type="submit" class="knopf primaer">Weiter</button></div></form>';
+  } else {
+    html += '<div class="knopf-reihe"><button type="button" class="knopf" data-aktion="wizard-zurueck">Zurück</button><button type="button" class="knopf primaer" id="wizard-speichern" data-aktion="training-speichern">Training speichern</button></div>';
+  }
+  html += "</div>";
+  el.innerHTML = html;
+  const titel = $("wizard-titel");
+  if (titel) titel.focus({ preventScroll: false });
+}
+
+// Baut ein Eingabefeld samt Fehlerzeile
+function feldHtml(id, beschriftung, regel, modus, muster, pflicht, wert) {
+  return '<div class="feld"><label class="feld-name" for="' + id + '">' + beschriftung + '</label><input type="text" id="' + id + '" data-regel="' + regel + '" inputmode="' + modus + '" pattern="' + muster + '" autocomplete="off"' +
+    (pflicht ? ' required aria-required="true"' : "") + ' value="' + esc(wert || "") + '" aria-describedby="' + id + '-fehler"><div id="' + id + '-fehler" class="fehlertext" role="alert"></div></div>';
+}
+
+function wizardWeiter() {
+  const t = zustand.training;
+  if (t.schritt === 1) {
+    if (!t.gruppe) return renderWizard("Bitte zuerst eine Muskelgruppe auswählen.");
+    t.schritt = 2;
+  } else if (t.schritt === 2) {
+    if (t.uebungen.length === 0) return renderWizard("Bitte mindestens eine Übung auswählen.");
+    t.schritt = 3;
+  } else if (t.schritt === 3) {
+    const ergebnis = pruefeFormular($("wizard-form"));
+    if (!ergebnis.ok) return;
+    t.schritt = 4;
+  }
+  renderWizard();
+}
+
+function wizardZurueck() {
+  const t = zustand.training;
+  if (t.schritt > 1) { t.schritt--; renderWizard(); }
+}
+
+// Endgültiges Speichern: Die Werte werden hier noch einmal aus den ROH-Texten geprüft,
+// unabhängig davon, was im Formular steht.
+function speichereTraining() {
+  if (zustand.speichertGerade || Date.now() < zustand.klickSperreBis) return;   // Schutz gegen Doppelklick
+  zustand.speichertGerade = true;
+  const knopf = $("wizard-speichern");
+  if (knopf) knopf.disabled = true;
+  try {
+    const t = zustand.training;
+    const datum = pruefeDatum(t.felder["t-datum"], true, false);
+    const neue = [];
+    let fehler = datum.ok ? "" : datum.fehler;
+    for (let i = 0; i < t.uebungen.length && fehler === ""; i++) {
+      const saetze = FELD_REGELN.saetze(t.felder["t-saetze-" + i]);
+      const wdh = FELD_REGELN.wiederholungen(t.felder["t-wdh-" + i]);
+      const gewicht = FELD_REGELN.trainingsgewicht(t.felder["t-gewicht-" + i]);
+      if (!saetze.ok || !wdh.ok || !gewicht.ok) { fehler = "Bitte die Angaben zu „" + t.uebungen[i] + "“ prüfen."; break; }
+      neue.push({ muskelgruppe: t.gruppe, uebung: t.uebungen[i], gewicht: gewicht.wert, wiederholungen: wdh.wert, saetze: saetze.wert, datum: datum.wert });
+    }
+    if (fehler === "" && (neue.length === 0 || MUSKELGRUPPEN.indexOf(t.gruppe) === -1)) fehler = "Es gibt nichts zu speichern.";
+    if (fehler !== "") {
+      t.schritt = 3;
+      renderWizard(fehler);
+      pruefeFormular($("wizard-form"));
+      return;
+    }
+    const ergebnis = speichereEinheiten(neue);
+    if (!ergebnis.ok) { renderWizard(ergebnis.fehler); return; }
+    zeigeTrainingUebersicht();
+    aktualisiereAlles();
+    zeigeToast("Training gespeichert.");
+    $("titel-training").focus();
+  } finally {
+    zustand.speichertGerade = false;
+    zustand.klickSperreBis = Date.now() + 700;
+  }
+}
+
+function speichereEigeneUebungAusFormular() {
+  const feld = $("e-name");
+  const ergebnis = pruefeFeld(feld);
+  if (!ergebnis.ok) { feld.focus(); return; }
+  if (!speichereEigeneUebung(zustand.training.gruppe, ergebnis.wert)) { zeigeFeldFehler(feld, FEHLER_GESPERRT); return; }
+  zustand.training.uebungen.push(ergebnis.wert);     // neue Übung gleich auswählen
+  renderWizard();
+  zeigeToast("Eigene Übung gespeichert.");
+}
+
+
+/* ======================================================================
+   I. STATISTIKEN
+   Zeitraum (von/bis) wählen; es werden nur echte gespeicherte Daten gezeigt.
+   ====================================================================== */
+
+function tagDavor(iso) {
+  const d = new Date(iso + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
+function renderStatistik() {
+  const el = $("statistik-inhalt");
+  const einheiten = daten.einheiten;
+  if (einheiten.length === 0) {
+    el.innerHTML = '<div class="karte leer-zustand"><h2>Noch keine Statistiken</h2><p>Sobald du Trainingseinheiten speicherst, erscheinen hier Häufigkeit, Score-Entwicklung und Fortschritt.</p>' +
+      '<button type="button" class="knopf primaer" data-aktion="training-starten">Training starten</button></div>';
+    return;
+  }
+  const s = zustand.statistik;
+  const alleDaten = einheiten.map(function (e) { return e.datum; }).sort();
+  if (!s.angepasst) { s.von = alleDaten[0]; s.bis = alleDaten[alleDaten.length - 1]; }
+  const gruppenMitDaten = MUSKELGRUPPEN.filter(function (g) { return daten.gruppen[g].hatDaten; });
+  if (gruppenMitDaten.indexOf(s.gruppe) === -1) s.gruppe = gruppenMitDaten[0];
+  let optionen = "";
+  gruppenMitDaten.forEach(function (g) { optionen += "<option" + (g === s.gruppe ? " selected" : "") + ">" + esc(g) + "</option>"; });
+  el.innerHTML = '<form id="stat-form" class="karte" novalidate><h2>Zeitraum</h2><div class="feld-reihe zwei">' +
+    '<div class="feld"><label class="feld-name" for="s-von">Von</label><input type="date" id="s-von" data-regel="datum" max="' + LETZTES_ERLAUBTES_DATUM + '" value="' + esc(s.von) + '" aria-describedby="s-von-fehler"><div id="s-von-fehler" class="fehlertext" role="alert"></div></div>' +
+    '<div class="feld"><label class="feld-name" for="s-bis">Bis</label><input type="date" id="s-bis" data-regel="datum" max="' + LETZTES_ERLAUBTES_DATUM + '" value="' + esc(s.bis) + '" aria-describedby="s-bis-fehler"><div id="s-bis-fehler" class="fehlertext" role="alert"></div></div></div>' +
+    '<div class="feld" style="margin-bottom:0"><label class="feld-name" for="s-gruppe">Muskelgruppe für das Diagramm</label><select id="s-gruppe">' + optionen + "</select></div></form>" +
+    '<div id="stat-ergebnis"></div>';
+  renderStatistikErgebnis();
+}
+
+function renderStatistikErgebnis() {
+  const ziel = $("stat-ergebnis");
+  if (!ziel) return;
+  const von = pruefeDatum($("s-von").value, true, $("s-von").validity.badInput);
+  const bis = pruefeDatum($("s-bis").value, true, $("s-bis").validity.badInput);
+  if (!von.ok || !bis.ok) { ziel.innerHTML = '<div class="meldung info">Bitte einen gültigen Zeitraum eingeben.</div>'; return; }
+  if (von.wert > bis.wert) {
+    zeigeFeldFehler($("s-bis"), "Das Enddatum darf nicht vor dem Startdatum liegen.");
+    ziel.innerHTML = '<div class="meldung info">Bitte einen gültigen Zeitraum eingeben.</div>';
+    return;
+  }
+  zeigeFeldFehler($("s-bis"), "");
+  zustand.statistik.von = von.wert; zustand.statistik.bis = bis.wert;
+  const imZeitraum = daten.einheiten.filter(function (e) { return e.datum >= von.wert && e.datum <= bis.wert; });
+  const tage = {};
+  imZeitraum.forEach(function (e) { tage[e.datum] = true; });
+  const anzahlTage = Object.keys(tage).length;
+  const zeitraumTage = tageZwischen(von.wert, bis.wert) + 1;
+  const proWoche = anzahlTage / (zeitraumTage / 7);
+  const haeufigkeit30 = zaehleTrainingstage(fuerBerechnung(daten.einheiten), bezugsdatum());
+
+  let html = '<div class="karte"><h2>Überblick</h2><div class="kennzahlen">' +
+    kennzahlHtml("Trainingseinheiten", String(imZeitraum.length), "gespeicherte Einträge im Zeitraum") +
+    kennzahlHtml("Trainingstage", String(anzahlTage), "im gewählten Zeitraum") +
+    kennzahlHtml("Ø pro Woche", proWoche.toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " Tage", "im gewählten Zeitraum") +
+    kennzahlHtml("Trainingshäufigkeit", haeufigkeit30 + " von " + ZIEL_TRAININGSTAGE + " Tagen", "letzte " + BETRACHTETE_TAGE + " Tage (wie im Score)") + "</div></div>";
+
+  html += '<div class="karte"><h2>Fortschritt je Muskelgruppe</h2>';
+  let zeilen = "";
+  MUSKELGRUPPEN.forEach(function (g) {
+    const liste = daten.gruppen[g].einheiten;
+    const ende = scoreBis(liste, daten.kg, bis.wert);
+    if (ende === null) return;
+    const start = scoreBis(liste, daten.kg, tagDavor(von.wert));
+    const status = bestimmeStatus(ende, true).status;
+    let aenderung = '<span class="leise">neu</span>';
+    if (start !== null) {
+      const diff = ende - start;
+      aenderung = '<span class="' + (diff > 0 ? "pos" : diff < 0 ? "neg" : "") + '">' + (diff > 0 ? "+" : "") + diff + "</span>";
+    }
+    zeilen += '<div class="balkenzeile"><span>' + esc(g) + '</span><div class="balken" role="img" aria-label="' + esc(g) + ": " + ende + ' von 100"><span style="width:' + ende + "%;background:" + STATUS_FARBE[status] + '"></span></div><span class="aenderung">' + ende + " · " + aenderung + "</span></div>";
+  });
+  html += zeilen === "" ? '<p class="leise">Für diesen Zeitraum liegen noch keine Daten vor.</p>' : zeilen + '<p class="leise">Zahl = Score am Ende des Zeitraums, Änderung = Unterschied zum Score davor („neu“ = erste Einträge im Zeitraum).</p>';
+  html += "</div>";
+
+  const gruppe = $("s-gruppe").value;
+  const verlauf = verlaufFuerGruppe(daten.gruppen[gruppe].einheiten, daten.kg).filter(function (p) { return p.datum >= von.wert && p.datum <= bis.wert; });
+  html += '<div class="karte"><h2>Score-Entwicklung: ' + esc(gruppe) + "</h2>";
+  html += verlauf.length < 2 ? '<p class="leise">Für ein Diagramm werden Einträge von mindestens zwei Trainingstagen im Zeitraum benötigt.</p>' :
+    liniendiagrammSvg(verlauf, "Score-Verlauf " + gruppe + ": " + verlauf.map(function (p) { return datumAnzeige(p.datum) + " " + p.score; }).join(", "));
+  html += "</div>";
+  ziel.innerHTML = html;
+}
+
+
+/* ======================================================================
+   J. ERNÄHRUNG
+   Die Berechnung übernimmt ausschließlich die vorhandene Funktion berechneErnaehrung().
+   ====================================================================== */
+
+function renderErnaehrung() {
+  const e = zustand.eingaben;
+  const einst = holeEinstellungen();
+  const ziel = e["n-ziel"] || einst.trainingsziel;
+  const gewicht = e["n-gewicht"] !== undefined ? e["n-gewicht"] : (daten.kg === null ? "" : zahlText(daten.kg));
+  const uebungen = e["n-uebungen"] !== undefined ? e["n-uebungen"] : "";
+  let optionen = "";
+  ZIEL_REIHENFOLGE.forEach(function (z) { optionen += "<option" + (z === ziel ? " selected" : "") + ">" + z + "</option>"; });
+  $("ernaehrung-inhalt").innerHTML =
+    '<form id="n-form" class="karte" novalidate><h2>Dein täglicher Bedarf</h2>' +
+    '<div class="feld"><label class="feld-name" for="n-ziel">Ziel</label><select id="n-ziel">' + optionen + "</select></div>" +
+    feldHtml("n-gewicht", "Körpergewicht (kg)", "koerpergewichtPflicht", "decimal", "[0-9]+([.,][0-9])?", true, gewicht) +
+    feldHtml("n-uebungen", "Trainingsaktivität: Übungen pro Trainingstag (0–8)", "uebungenProTag", "numeric", "[0-9]+", true, uebungen) +
+    '<p class="hilfetext" id="n-stufe" style="margin-top:-6px;margin-bottom:10px"></p>' +
+    '<button type="button" class="knopf klein" data-aktion="uebungen-uebernehmen">Aus meinen Trainingsdaten übernehmen</button>' +
+    '<div class="knopf-reihe"><button type="submit" class="knopf primaer">Berechnen</button></div></form>' +
+    '<div id="n-ergebnis" aria-live="polite"></div>';
+  aktualisiereAktivitaetsstufe();
+  if (zustand.ernaehrung.ergebnis) zeigeErnaehrungsErgebnis(zustand.ernaehrung.ergebnis);
+}
+
+function aktualisiereAktivitaetsstufe() {
+  const feld = $("n-uebungen");
+  const hinweis = $("n-stufe");
+  if (!feld || !hinweis) return;
+  const ergebnis = FELD_REGELN.uebungenProTag(feld.value);
+  hinweis.textContent = ergebnis.ok ? "Aktivitätsstufe: " + bestimmeAktivitaetslevel(ergebnis.wert) : "";
+}
+
+function zeigeErnaehrungsErgebnis(erg) {
+  $("n-ergebnis").innerHTML = '<div class="karte beige"><h2>Ergebnis</h2><div class="kennzahlen">' +
+    kennzahlHtml("Täglicher Kalorienbedarf", erg.kalorien.toLocaleString("de-DE") + " kcal", "Ziel: " + esc(erg.ziel)) +
+    kennzahlHtml("Täglicher Proteinbedarf", erg.protein.toLocaleString("de-DE") + " g", "Ziel: " + esc(erg.ziel)) + '</div>' +
+    '<p class="leise" style="margin-top:10px">Vereinfachte Projektvorgabe, kein individuell abgestimmter Ernährungsplan.</p></div>';
+}
+
+function berechneErnaehrungAusFormular() {
+  const ergebnis = pruefeFormular($("n-form"));
+  if (!ergebnis.ok) return;
+  const ziel = $("n-ziel").value;
+  const gewicht = ergebnis.werte["n-gewicht"];
+  const uebungen = ergebnis.werte["n-uebungen"];
+  const berechnet = berechneErnaehrung(gewicht, uebungen, ziel);      // vorhandener Algorithmus, unverändert
+  if (!berechnet.ok) {
+    $("n-ergebnis").innerHTML = '<div class="meldung fehler" role="alert">' + esc(berechnet.fehler) + "</div>";
+    return;
+  }
+  speichereEinstellungen({ trainingsziel: ziel });
+  zustand.ernaehrung.ergebnis = { kalorien: berechnet.kalorien, protein: berechnet.protein, ziel: ziel };
+  zeigeErnaehrungsErgebnis(zustand.ernaehrung.ergebnis);
+}
+
+function uebernehmeUebungenAusDaten() {
+  if (daten.einheiten.length === 0) { zeigeToast("Noch keine Trainingsdaten vorhanden."); return; }
+  const letzterTag = daten.einheiten.map(function (e) { return e.datum; }).sort().pop();
+  const anzahl = zaehleUebungenAmTag(fuerBerechnung(daten.einheiten), letzterTag);
+  const feld = $("n-uebungen");
+  feld.value = String(anzahl);
+  zustand.eingaben["n-uebungen"] = feld.value;
+  pruefeFeld(feld);
+  aktualisiereAktivitaetsstufe();
+  $("n-ergebnis").innerHTML = "";
+  zustand.ernaehrung.ergebnis = null;
+  zeigeToast("Übernommen: " + anzahl + " Übungen am " + datumAnzeige(letzterTag) + ".");
+}
+
+
+/* ======================================================================
+   K. MEHR: Profil, persönliche Angaben, Einstellungen, Informationen
+   ====================================================================== */
+
+function renderMehr() {
+  const e = zustand.eingaben;
+  const angaben = holeAngaben();
+  const einst = holeEinstellungen();
+  const name = e["m-name"] !== undefined ? e["m-name"] : angaben.name;
+  const alter = e["m-alter"] !== undefined ? e["m-alter"] : (angaben.alter === null ? "" : String(angaben.alter));
+  const groesse = e["m-groesse"] !== undefined ? e["m-groesse"] : (angaben.groesse === null ? "" : zahlText(angaben.groesse));
+  const gewicht = e["m-gewicht"] !== undefined ? e["m-gewicht"] : (daten.kg === null ? "" : zahlText(daten.kg));
+  let zielOptionen = "";
+  ZIEL_REIHENFOLGE.forEach(function (z) { zielOptionen += "<option" + (z === einst.trainingsziel ? " selected" : "") + ">" + z + "</option>"; });
+  const warnung = (!speicherFunktioniert ? '<div class="meldung warnung">Der Browser-Speicher ist nicht verfügbar. Deine Daten bleiben nur bis zum Schließen dieser Seite erhalten.</div>' : "") +
+    (Object.keys(gesperrt).length > 0 ? '<div class="meldung fehler">Gespeicherte Daten konnten nicht gelesen werden. Sie wurden nicht überschrieben. Neue Einträge werden dafür nicht gespeichert.</div>' : "");
+  const initial = angaben.name ? angaben.name.charAt(0).toUpperCase() : "M";
+
+  $("mehr-inhalt").innerHTML = warnung +
+    '<div class="karte"><div class="profil-zeile"><div class="avatar" aria-hidden="true">' + esc(initial) + '</div><div><h2 style="margin:0">' + esc(angaben.name || "Dein Profil") + '</h2><p class="leise" style="margin:0">Persönliches Profil</p></div></div></div>' +
+    '<form id="m-form" class="karte" novalidate><h2>Persönliche Angaben</h2>' +
+    feldHtml("m-name", "Name", "name", "text", "[\\p{L}\\p{M}]+( [\\p{L}\\p{M}]+)*", true, name).replace('autocomplete="off"', 'autocomplete="name"') +
+    '<div class="feld-reihe">' + feldHtml("m-alter", 'Alter <span class="zusatz">optional</span>', "alter", "numeric", "[0-9]+", false, alter) +
+    feldHtml("m-groesse", 'Größe (cm) <span class="zusatz">optional</span>', "groesse", "decimal", "[0-9]+([.,][0-9])?", false, groesse) +
+    feldHtml("m-gewicht", 'Gewicht (kg) <span class="zusatz">optional</span>', "koerpergewicht", "decimal", "[0-9]+([.,][0-9])?", false, gewicht) + "</div>" +
+    '<p class="hilfetext">Das Körpergewicht wird für die relative Trainingsleistung und die Ernährungsberechnung verwendet.</p>' +
+    '<button type="submit" class="knopf primaer breit">Angaben speichern</button></form>' +
+    '<form id="m-einst-form" class="karte" novalidate><h2>Einstellungen</h2>' +
+    '<div class="feld"><label class="feld-name" for="m-ansicht">Standard-Körperform</label><select id="m-ansicht"><option value="mann"' + (einst.koerper === "mann" ? " selected" : "") + '>Mann</option><option value="frau"' + (einst.koerper === "frau" ? " selected" : "") + ">Frau</option></select></div>" +
+    '<div class="feld"><label class="feld-name" for="m-ziel">Trainingsziel (für Übungsempfehlungen)</label><select id="m-ziel">' + zielOptionen + "</select></div>" +
+    '<button type="submit" class="knopf primaer breit">Einstellungen speichern</button></form>' +
+    '<div class="karte"><h2>Meine Daten</h2><p>Gespeicherte Einträge: <strong>' + daten.einheiten.length + "</strong></p>" +
+    (daten.ignoriert > 0 ? '<p class="leise">' + daten.ignoriert + " ältere oder unvollständige Datensätze werden nicht angezeigt oder berechnet. Sie wurden nicht gelöscht.</p>" : "") +
+    '<button type="button" class="knopf gefahr breit" data-aktion="daten-loeschen">Alle Daten löschen</button></div>' +
+    '<div class="karte"><h2>Über mamu</h2><p>mamu ist eine Fitness- und Ernährungsanwendung: Du dokumentierst dein Training, verfolgst deine Muskelgruppen auf der Körperansicht, erhältst passende Übungen und berechnest deinen Kalorien- und Proteinbedarf.</p>' +
+    '<p class="leise">Die Statusstufen Starter, Rising, Advanced und Elite sind eine interne Bewertung von mamu und keine allgemeingültige sportliche Bewertung. Trainings- und Ernährungswerte sind vereinfachte Projektvorgaben und keine individuell abgestimmten Pläne.</p>' +
+    '<p class="leise">Version: Prototyp 2.0 · Ein Projekt der FH Technikum Wien · Alle Daten bleiben in deinem Browser.</p></div>';
+}
+
+function speichereAngabenAusFormular() {
+  const ergebnis = pruefeFormular($("m-form"));
+  if (!ergebnis.ok) return;
+  const w = ergebnis.werte;
+  const ok1 = speichereWert(SCHLUESSEL.angaben, { name: w["m-name"], alter: w["m-alter"], groesse: w["m-groesse"] });
+  const ok2 = speichereKoerpergewicht(w["m-gewicht"]);      // leer -> null (nicht 0)
+  if (!ok1 || !ok2) { zeigeToast("Speichern nicht möglich: " + FEHLER_GESPERRT); return; }
+  ["m-name", "m-alter", "m-groesse", "m-gewicht"].forEach(function (id) { delete zustand.eingaben[id]; });
+  aktualisiereAlles();
+  zeigeToast("Angaben gespeichert.");
+}
+
+function speichereEinstellungenAusFormular() {
+  const ansicht = $("m-ansicht").value === "frau" ? "frau" : "mann";
+  const ziel = $("m-ziel").value;
+  if (!trainingsziele[ziel] || !speichereEinstellungen({ koerper: ansicht, trainingsziel: ziel })) { zeigeToast("Einstellungen konnten nicht gespeichert werden."); return; }
+  zustand.geschlecht = ansicht;
+  delete zustand.eingaben["n-ziel"];
+  aktualisiereAlles();
+  zeigeToast("Einstellungen gespeichert.");
+}
+
+async function loescheAlleDaten() {
+  const ja = await bestaetige("Alle Daten löschen?", "Alle Trainingseinheiten, Angaben, eigene Übungen und Einstellungen werden dauerhaft gelöscht.", "Alles löschen");
+  if (!ja) return;
+  Object.keys(SCHLUESSEL).forEach(function (k) {
+    const name = SCHLUESSEL[k];
+    delete arbeitsspeicher[name];
+    delete gesperrt[name];
+    try { window.localStorage.removeItem(name); } catch (fehler) { speicherFunktioniert = false; }
+  });
+  zustand.eingaben = {};
+  zustand.ernaehrung.ergebnis = null;
+  zustand.statistik = { von: "", bis: "", gruppe: "", angepasst: false };
+  zustand.geschlecht = "mann";
+  zustand.auswahl = null;
+  zeigeTrainingUebersicht();
+  aktualisiereAlles();
+  zeigeToast("Alle Daten wurden gelöscht.");
+}
+
+
+/* ======================================================================
+   L. NAVIGATION, EREIGNISSE UND START
+   ====================================================================== */
+
+const BEREICHE = ["koerper", "training", "statistik", "ernaehrung", "mehr"];
+
+function zeigeBereich(name, mitFokus) {
+  zustand.bereich = name;
+  BEREICHE.forEach(function (b) { $("bereich-" + b).hidden = (b !== name); });
+  document.querySelectorAll('[data-aktion="bereich"]').forEach(function (knopf) {
+    if (knopf.dataset.wert === name) knopf.setAttribute("aria-current", "page"); else knopf.removeAttribute("aria-current");
+  });
+  if (name === "training" && !$("training-uebersicht").hidden) renderTrainingUebersicht();
+  if (name === "statistik") renderStatistik();
+  if (name === "ernaehrung") renderErnaehrung();
+  if (name === "mehr") renderMehr();
+  window.scrollTo(0, 0);
+  if (mitFokus) $("titel-" + name).focus({ preventScroll: true });
+}
+
+function aktualisiereAlles() {
+  aktualisiereDaten();
+  renderKoerper();
+  if ($("training-wizard").hidden) renderTrainingUebersicht();
+  renderStatistik();
+  renderErnaehrung();
+  renderMehr();
+}
+
+// ---------- Bestätigungsdialog (statt window.confirm) ----------
+function bestaetige(titel, text, okText) {
+  return new Promise(function (fertig) {
+    const dialog = $("dialog");
+    $("dialog-titel").textContent = titel;
+    $("dialog-text").textContent = text;
+    $("dialog-ja").textContent = okText || "OK";
+    let erledigt = false;
+    function beende(antwort) {
+      if (erledigt) return;
+      erledigt = true;
+      if (dialog.open) dialog.close();
+      $("dialog-ja").onclick = null; $("dialog-nein").onclick = null; dialog.onclose = null;
+      fertig(antwort);
+    }
+    $("dialog-ja").onclick = function () { beende(true); };
+    $("dialog-nein").onclick = function () { beende(false); };
+    dialog.onclose = function () { beende(false); };
+    dialog.showModal();
+    $("dialog-nein").focus();
+  });
+}
+
+let toastZeitgeber = null;
+function zeigeToast(text) {
+  const t = $("toast");
+  t.textContent = text;
+  t.hidden = false;
+  clearTimeout(toastZeitgeber);
+  toastZeitgeber = setTimeout(function () { t.hidden = true; }, 2600);
+}
+
+// Merkt sich Eingaben, damit sie beim Wechsel des Bereichs nicht verloren gehen
+function merkeFeldWert(feld) {
+  if (!feld.id) return;
+  if (feld.id.indexOf("t-") === 0) zustand.training.felder[feld.id] = feld.value;
+  else if (feld.id.indexOf("m-") === 0 || feld.id.indexOf("n-") === 0) zustand.eingaben[feld.id] = feld.value;
+}
+
+// ---------- Klicks ----------
+document.addEventListener("click", function (ereignis) {
+  const muskel = ereignis.target.closest(".muskel");
+  if (muskel) {
+    waehleMuskelgruppe(muskel.dataset.gruppe, muskel.closest(".koerper-seite").dataset.seite);
+    return;
+  }
+  const knopf = ereignis.target.closest("[data-aktion]");
+  if (!knopf || knopf.disabled) return;
+  const aktion = knopf.dataset.aktion;
+  if (aktion === "bereich") {
+    if (knopf.dataset.wert === "koerper" && zustand.bereich === "koerper" && zustand.auswahl) { schliesseProfil(); return; }
+    zeigeBereich(knopf.dataset.wert, true);
+  } else if (aktion === "geschlecht") {
+    zustand.geschlecht = knopf.dataset.wert === "frau" ? "frau" : "mann";
+    speichereEinstellungen({ koerper: zustand.geschlecht });
+    renderKoerper();
+  } else if (aktion === "seite") {
+    zustand.seite = knopf.dataset.wert === "hinten" ? "hinten" : "vorne";
+    renderKoerper();
+  } else if (aktion === "profil-zurueck") {
+    schliesseProfil();
+  } else if (aktion === "erstes-training") {
+    const gruppe = knopf.dataset.gruppe;
+    zeigeBereich("training", false);
+    starteTraining(gruppe);
+  } else if (aktion === "training-starten") {
+    zeigeBereich("training", false);
+    starteTraining(null);
+  } else if (aktion === "wizard-gruppe") {
+    const gruppe = knopf.dataset.gruppe;
+    if (zustand.training.gruppe !== gruppe) { zustand.training.gruppe = gruppe; zustand.training.uebungen = []; zustand.training.felder = {}; }
+    document.querySelectorAll('[data-aktion="wizard-gruppe"]').forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.gruppe === gruppe)); });
+  } else if (aktion === "wizard-uebung") {
+    const name = knopf.dataset.name;
+    const liste = zustand.training.uebungen;
+    const index = liste.indexOf(name);
+    if (index === -1) liste.push(name); else liste.splice(index, 1);
+    knopf.setAttribute("aria-pressed", String(index === -1));
+  } else if (aktion === "wizard-weiter") {
+    wizardWeiter();
+  } else if (aktion === "wizard-zurueck") {
+    wizardZurueck();
+  } else if (aktion === "wizard-abbrechen") {
+    zeigeTrainingUebersicht();
+  } else if (aktion === "training-speichern") {
+    speichereTraining();
+  } else if (aktion === "eigene-loeschen") {
+    loescheEigeneUebungMitFrage(knopf.dataset.name);
+  } else if (aktion === "sitzung-loeschen") {
+    loescheSitzungMitFrage(knopf.dataset.ids);
+  } else if (aktion === "uebungen-uebernehmen") {
+    uebernehmeUebungenAusDaten();
+  } else if (aktion === "daten-loeschen") {
+    loescheAlleDaten();
+  }
+});
+
+async function loescheEigeneUebungMitFrage(name) {
+  const gruppe = zustand.training.gruppe;
+  if (daten.einheiten.some(function (e) { return e.muskelgruppe === gruppe && e.uebung === name; })) {
+    zeigeToast("Diese Übung wird in gespeicherten Trainings verwendet und kann nicht gelöscht werden.");
+    return;
+  }
+  if (!(await bestaetige("Eigene Übung löschen?", "„" + name + "“ wird aus deinen eigenen Übungen entfernt.", "Löschen"))) return;
+  loescheEigeneUebung(gruppe, name);
+  zustand.training.uebungen = zustand.training.uebungen.filter(function (n) { return n !== name; });
+  renderWizard();
+}
+
+async function loescheSitzungMitFrage(idText) {
+  const ids = String(idText).split(",").map(Number).filter(Number.isSafeInteger);
+  if (ids.length === 0) return;
+  if (!(await bestaetige("Einheit löschen?", "Diese Trainingseinheit wird dauerhaft gelöscht. Scores und Statistiken werden neu berechnet.", "Löschen"))) return;
+  if (!loescheEinheiten(ids)) { zeigeToast(FEHLER_GESPERRT); return; }
+  aktualisiereAlles();
+  zeigeToast("Einheit gelöscht.");
+}
+
+// ---------- Eingaben ----------
+function istEingabeFeld(ziel) { return ziel instanceof HTMLInputElement || ziel instanceof HTMLSelectElement; }
+
+document.addEventListener("input", function (ereignis) {
+  const feld = ereignis.target;
+  if (!istEingabeFeld(feld)) return;
+  merkeFeldWert(feld);
+  if (feld.dataset.regel) pruefeFeld(feld);            // Prüfung beim Tippen
+  nachEingabe(feld);
+});
+document.addEventListener("change", function (ereignis) {
+  const feld = ereignis.target;
+  if (!istEingabeFeld(feld)) return;
+  merkeFeldWert(feld);
+  if (feld.dataset.regel) pruefeFeld(feld);
+  nachEingabe(feld);
+});
+document.addEventListener("focusout", function (ereignis) {      // Prüfung beim Verlassen des Feldes
+  const feld = ereignis.target;
+  if (!istEingabeFeld(feld) || !feld.dataset.regel) return;
+  const ergebnis = pruefeFeld(feld);
+  normalisiereFeld(feld, ergebnis);
+  merkeFeldWert(feld);
+});
+
+function nachEingabe(feld) {
+  if (feld.id === "s-von" || feld.id === "s-bis") {
+    zustand.statistik.angepasst = true;
+    renderStatistikErgebnis();
+  } else if (feld.id === "s-gruppe") {
+    zustand.statistik.gruppe = feld.value;
+    renderStatistikErgebnis();
+  } else if (feld.id.indexOf("n-") === 0) {
+    if (feld.id === "n-uebungen") aktualisiereAktivitaetsstufe();
+    zustand.ernaehrung.ergebnis = null;                  // altes Ergebnis passt nicht mehr
+    if ($("n-ergebnis")) $("n-ergebnis").innerHTML = "";
+  }
+}
+
+// Formulare: Enter-Taste und Schaltfläche verwenden denselben Weg
+document.addEventListener("submit", function (ereignis) {
+  ereignis.preventDefault();
+  const id = ereignis.target.id;
+  if (id === "wizard-form") wizardWeiter();
+  else if (id === "eigene-form") speichereEigeneUebungAusFormular();
+  else if (id === "n-form") berechneErnaehrungAusFormular();
+  else if (id === "m-form") speichereAngabenAusFormular();
+  else if (id === "m-einst-form") speichereEinstellungenAusFormular();
+});
+
+// Tastatur: Enter/Leertaste auf einer Muskelgruppe, Esc schließt das Profil
+document.addEventListener("keydown", function (ereignis) {
+  const muskel = ereignis.target.closest ? ereignis.target.closest(".muskel") : null;
+  if (muskel && (ereignis.key === "Enter" || ereignis.key === " ")) {
+    ereignis.preventDefault();
+    waehleMuskelgruppe(muskel.dataset.gruppe, muskel.closest(".koerper-seite").dataset.seite);
+  } else if (ereignis.key === "Escape" && zustand.auswahl && !$("dialog").open && zustand.bereich === "koerper") {
+    schliesseProfil();
+  }
+});
+
+// Wischen zwischen Vorder- und Rückseite (nur Handy)
+(function () {
+  let startX = 0, startY = 0;
+  const bereich = $("koerper-bereich");
+  bereich.addEventListener("touchstart", function (e) { startX = e.touches[0].clientX; startY = e.touches[0].clientY; }, { passive: true });
+  bereich.addEventListener("touchend", function (e) {
+    if (!window.matchMedia("(max-width: 699px)").matches) return;
+    const dx = e.changedTouches[0].clientX - startX, dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      zustand.seite = dx < 0 ? "hinten" : "vorne";
+      renderKoerper();
+    }
+  }, { passive: true });
+})();
+document.addEventListener("gesturestart", function (e) { e.preventDefault(); });   // kein Zoomen per Geste
+
+// ---------- Start: immer Vorderansicht, keine Muskelgruppe ausgewählt ----------
+(function start() {
+  zustand.geschlecht = holeEinstellungen().koerper;
+  zustand.seite = "vorne";
+  zustand.auswahl = null;
+  zustand.eingaben = {};
+  zustand.statistik.angepasst = false;
+  aktualisiereAlles();
+  zeigeBereich("koerper", false);
+})();
+
+</script>
+</body>
+</html>
