@@ -4,7 +4,7 @@
 // und nichts gespeichert. Für die HTML-Oberfläche kann diese Datei
 // später durch HTML-Code ersetzt werden.
 // ============================================================
-
+//test
 function zeigeFehler(text) {
   console.log("FEHLER: " + text);
 }
