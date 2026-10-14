@@ -3,6 +3,7 @@
 // Nutzt waehleUebungen (uebungsempfehlung.js) und berechneErnaehrung
 // (ernaehrung.js), ohne sie zu verändern.
 // ============================================================
+// test
 
 const trainingsdaten = require("./trainingsdaten");
 const berechnung = require("./berechnung");
